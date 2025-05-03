@@ -7,7 +7,8 @@ const genAI = new GoogleGenerativeAI(import.meta.env.GOOGLE_GEMINI_API_KEY);
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { transcript } = body;
+    let { transcript } = body;
+    let transcriptCleaned = false;
 
     // Validate required fields
     if (!transcript) {
@@ -22,6 +23,15 @@ export const POST: APIRoute = async ({ request }) => {
           },
         }
       );
+    }
+
+    // Bereinige Transkript: Entferne einzelne Zeichen am Ende (häufige Fehler bei Transkriptionen)
+    const words = transcript.trim().split(/\s+/);
+    if (words.length > 0 && words[words.length - 1].length === 1) {
+      words.pop(); // Entferne das letzte Wort, wenn es nur ein Zeichen ist
+      transcript = words.join(' ');
+      transcriptCleaned = true;
+      console.log('Ein einzelnes Zeichen am Ende des Transkripts wurde entfernt.');
     }
 
     // Create a prompt based on the user input
@@ -46,8 +56,14 @@ export const POST: APIRoute = async ({ request }) => {
     console.log(JSON.stringify(parsedResponse, null, 2));
     console.log('--- END PARSED RESPONSE ---');
 
+    // Füge Information hinzu, wenn das Transkript bereinigt wurde
+    const responseData = {
+      ...parsedResponse,
+      transcriptCleaned: transcriptCleaned
+    };
+
     return new Response(
-      JSON.stringify(parsedResponse),
+      JSON.stringify(responseData),
       {
         status: 200,
         headers: {

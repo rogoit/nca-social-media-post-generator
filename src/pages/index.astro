@@ -27,6 +27,7 @@ import Layout from '../layouts/Layout.astro';
                 <div>
                     <h2 class="text-lg font-medium text-gray-900 mb-2">Korrigiertes Transkript</h2>
                     <div id="transcript-content" class="p-4 bg-gray-50 rounded-md border border-gray-200 max-h-[300px] overflow-y-auto"></div>
+                    <div id="transcript-cleaned" class="mt-1 text-xs text-amber-600 hidden">Hinweis: Ein einzelnes Zeichen am Ende des Transkripts wurde automatisch entfernt.</div>
                 </div>
                 
                 <div>
@@ -113,6 +114,12 @@ import Layout from '../layouts/Layout.astro';
                 transcriptContent.textContent = data.transcript;
                 titleContent.textContent = data.title;
                 descriptionContent.textContent = data.description;
+                
+                // Zeige Hinweis an, wenn das Transkript bereinigt wurde
+                const transcriptCleaned = document.getElementById('transcript-cleaned');
+                if (data.transcriptCleaned && transcriptCleaned) {
+                    transcriptCleaned.classList.remove('hidden');
+                }
                 
             } catch (error) {
                 // Hide loading, show error
