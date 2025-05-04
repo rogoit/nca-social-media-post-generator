@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(import.meta.env.GOOGLE_GEMINI_API_KEY);
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    let { transcript } = body;
+    let { transcript, type = 'youtube' } = body;
     let transcriptCleaned = false;
 
     // Validate required fields
@@ -34,8 +34,13 @@ export const POST: APIRoute = async ({ request }) => {
       console.log('Ein einzelnes Zeichen am Ende des Transkripts wurde entfernt.');
     }
 
-    // Create a prompt based on the user input
-    const prompt = createPrompt(transcript);
+    // Create a prompt based on the user input and content type
+    let prompt;
+    if (type === 'linkedin') {
+      prompt = createLinkedinPrompt(transcript);
+    } else {
+      prompt = createYoutubePrompt(transcript);
+    }
 
     // Generate text using Google Gemini API
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
@@ -44,12 +49,17 @@ export const POST: APIRoute = async ({ request }) => {
     const text = response.text();
     
     // Debug: Log the raw AI response
-    console.log('--- DEBUG: RAW AI RESPONSE ---');
+    console.log(`--- DEBUG: RAW AI RESPONSE FOR ${type.toUpperCase()} ---`);
     console.log(text);
     console.log('--- END RAW AI RESPONSE ---');
 
-    // Parse the structured response from the AI
-    const parsedResponse = parseAIResponse(text);
+    // Parse the structured response from the AI based on content type
+    let parsedResponse;
+    if (type === 'linkedin') {
+      parsedResponse = parseLinkedinResponse(text);
+    } else {
+      parsedResponse = parseYoutubeResponse(text);
+    }
     
     // Debug: Log the parsed response
     console.log('--- DEBUG: PARSED RESPONSE ---');
@@ -72,11 +82,11 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error) {
-    console.error('Fehler beim Generieren des YouTube-Inhalts:', error);
+    console.error('Fehler beim Generieren des Inhalts:', error);
     
     return new Response(
       JSON.stringify({
-        error: 'Fehler beim Generieren des YouTube-Inhalts',
+        error: 'Fehler beim Generieren des Inhalts',
       }),
       {
         status: 500,
@@ -88,7 +98,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-function createPrompt(transcript: string): string {
+function createYoutubePrompt(transcript: string): string {
   return `Du bist ein YouTube-Content-Optimierungsassistent. Ich stelle dir ein Transkript aus einem YouTube-Video zur Verfügung, das Fehler, Füllwörter oder unklare Sätze enthalten kann.
 
 Deine Aufgabe ist es:
@@ -127,7 +137,36 @@ Hier ist das Transkript:
 ${transcript}`;
 }
 
-function parseAIResponse(text: string): {
+function createLinkedinPrompt(transcript: string): string {
+  return `Du bist ein LinkedIn-Content-Optimierungsassistent. Ich stelle dir ein Transkript zur Verfügung, das ich in einen überzeugenden LinkedIn-Post umwandeln möchte.
+
+Deine Aufgabe ist es, einen professionellen und ansprechenden LinkedIn-Post auf Deutsch zu erstellen, der folgende Spezifikationen erfüllt:
+
+- Zielgruppe: Eigene Follower und Entscheider
+- Thema: Informativ herausstellen
+- Tone of Voice: Soll klar machen, dass ich viel Spaß an den Themen habe und diese direkt helfen; ich bringe das gerne in Demos und Remote Workshops in Teams
+- Anrede: Informelle "ihr" Anrede verwenden, "Demo" nur erwähnen, wenn es um Barrierefreies Webdesign oder Refactoring geht
+- Abschluss: Eine sehr gute und motivierende Frage stellen, die dazu einlädt zu antworten und Leser als Experten wertschätzt
+
+Nicht zu verwendende Wörter:
+- Revolution (und ähnliche übertriebene Begriffe)
+
+Formatierung:
+- LinkedIn-Post sollte zwischen 1000-1500 Zeichen lang sein
+- Verwende Absätze zur besseren Lesbarkeit
+- Nutze maximal ein Emoji pro Absatz (nicht übertreiben)
+- Füge 3-5 relevante Hashtags am Ende hinzu
+
+Bitte formatiere deine Antwort wie folgt (benutze die englische Bezeichnung "LINKEDIN POST", aber der Inhalt soll komplett auf Deutsch sein):
+
+LINKEDIN POST:
+[Der komplette LinkedIn-Post auf Deutsch mit Absätzen und Hashtags]
+
+Hier ist das Transkript:
+${transcript}`;
+}
+
+function parseYoutubeResponse(text: string): {
   transcript: string;
   title: string;
   description: string;
@@ -156,6 +195,27 @@ function parseAIResponse(text: string): {
     const descriptionMatch = text.match(/DESCRIPTION:\s*([\s\S]*?)(?=$)/);
     if (descriptionMatch && descriptionMatch[1]) {
       result.description = descriptionMatch[1].trim();
+    }
+  } catch (error) {
+    console.error('Fehler beim Parsen der KI-Antwort:', error);
+  }
+
+  return result;
+}
+
+function parseLinkedinResponse(text: string): {
+  linkedinPost: string;
+} {
+  // Default values in case parsing fails
+  let result = {
+    linkedinPost: ''
+  };
+
+  try {
+    // Extract LinkedIn post
+    const linkedinMatch = text.match(/LINKEDIN POST:\s*([\s\S]*?)(?=$)/);
+    if (linkedinMatch && linkedinMatch[1]) {
+      result.linkedinPost = linkedinMatch[1].trim();
     }
   } catch (error) {
     console.error('Fehler beim Parsen der KI-Antwort:', error);

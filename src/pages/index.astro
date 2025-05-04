@@ -2,28 +2,54 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="YouTube Content Generator">
+<Layout title="Social Media Content Generator">
     <main class="max-w-4xl mx-auto py-10 px-4">
-        <h1 class="text-3xl font-bold text-center mb-8">YouTube Content Generator</h1>
+        <h1 class="text-3xl font-bold text-center mb-8">Social Media Content Generator</h1>
         
         <div class="bg-white p-6 rounded-lg shadow-md">
-            <form id="yt-form" class="space-y-6">
-                <div>
-                    <label for="transcript" class="block text-sm font-medium text-gray-700 mb-1">YouTube Transkript</label>
-                    <textarea id="transcript" name="transcript" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Füge dein YouTube Transkript hier ein..."></textarea>
-                </div>
-                
-                <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    YouTube Content generieren
-                </button>
-            </form>
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200 mb-6">
+                <button id="youtube-tab" class="px-6 py-2 font-medium border-b-2 border-red-600 text-red-600 rounded-t-md">YouTube</button>
+                <button id="linkedin-tab" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-600 rounded-t-md">LinkedIn</button>
+            </div>
             
+            <!-- YouTube Form -->
+            <div id="youtube-content" class="block">
+                <form id="yt-form" class="space-y-6">
+                    <div>
+                        <label for="yt-transcript" class="block text-sm font-medium text-gray-700 mb-1">YouTube Transkript</label>
+                        <textarea id="yt-transcript" name="transcript" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" placeholder="Füge dein YouTube Transkript hier ein..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        YouTube Content generieren
+                    </button>
+                </form>
+            </div>
+            
+            <!-- LinkedIn Form -->
+            <div id="linkedin-content" class="hidden">
+                <form id="li-form" class="space-y-6">
+                    <div>
+                        <label for="li-transcript" class="block text-sm font-medium text-gray-700 mb-1">Transkript</label>
+                        <textarea id="li-transcript" name="transcript" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Füge dein Transkript hier ein..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        LinkedIn Post generieren
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Loading Spinner -->
             <div id="loading" class="hidden mt-6 text-center">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+                <div id="youtube-spinner" class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600"></div>
+                <div id="linkedin-spinner" class="hidden inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
                 <p class="mt-2 text-gray-600">Transkript wird analysiert und Content generiert...</p>
             </div>
             
-            <div id="result" class="hidden mt-6 space-y-6">
+            <!-- YouTube Results -->
+            <div id="yt-result" class="hidden mt-6 space-y-6">
                 <div>
                     <h2 class="text-lg font-medium text-gray-900 mb-2">Korrigiertes Transkript</h2>
                     <div id="transcript-content" class="p-4 bg-gray-50 rounded-md border border-gray-200 max-h-[300px] overflow-y-auto"></div>
@@ -41,18 +67,33 @@ import Layout from '../layouts/Layout.astro';
                 </div>
                 
                 <div class="flex justify-end space-x-4">
-                    <button id="copy-transcript-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button id="copy-transcript-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         Transkript kopieren
                     </button>
-                    <button id="copy-title-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button id="copy-title-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         Titel kopieren
                     </button>
-                    <button id="copy-description-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button id="copy-description-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         Beschreibung kopieren
                     </button>
                 </div>
             </div>
             
+            <!-- LinkedIn Results -->
+            <div id="li-result" class="hidden mt-6 space-y-6">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900 mb-2">LinkedIn Post</h2>
+                    <div id="linkedin-content-result" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button id="copy-linkedin-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        LinkedIn Post kopieren
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Error Message -->
             <div id="error" class="hidden mt-6 p-4 bg-red-50 text-red-700 rounded-md border border-red-200">
                 <p id="error-message"></p>
             </div>
@@ -62,23 +103,71 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const form = document.getElementById('yt-form');
+        // Tabs
+        const youtubeTab = document.getElementById('youtube-tab');
+        const linkedinTab = document.getElementById('linkedin-tab');
+        const youtubeContent = document.getElementById('youtube-content');
+        const linkedinContent = document.getElementById('linkedin-content');
+        const youtubeSpinner = document.getElementById('youtube-spinner');
+        const linkedinSpinner = document.getElementById('linkedin-spinner');
+        
+        // Forms
+        const ytForm = document.getElementById('yt-form');
+        const liForm = document.getElementById('li-form');
+        
+        // Results
         const loading = document.getElementById('loading');
-        const result = document.getElementById('result');
+        const ytResult = document.getElementById('yt-result');
+        const liResult = document.getElementById('li-result');
         const transcriptContent = document.getElementById('transcript-content');
         const titleContent = document.getElementById('title-content');
         const descriptionContent = document.getElementById('description-content');
+        const linkedinContentResult = document.getElementById('linkedin-content-result');
+        
+        // Error
         const errorDiv = document.getElementById('error');
         const errorMessage = document.getElementById('error-message');
+        
+        // Copy buttons
         const copyTranscriptBtn = document.getElementById('copy-transcript-btn');
         const copyTitleBtn = document.getElementById('copy-title-btn');
         const copyDescriptionBtn = document.getElementById('copy-description-btn');
+        const copyLinkedinBtn = document.getElementById('copy-linkedin-btn');
         
-        form.addEventListener('submit', async (e) => {
+        // Tab switching
+        youtubeTab.addEventListener('click', () => {
+            youtubeTab.classList.add('border-b-2', 'border-red-600', 'text-red-600');
+            linkedinTab.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+            linkedinTab.classList.add('text-gray-500');
+            
+            youtubeContent.classList.remove('hidden');
+            linkedinContent.classList.add('hidden');
+            ytResult.classList.add('hidden');
+            liResult.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+        });
+        
+        linkedinTab.addEventListener('click', () => {
+            linkedinTab.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
+            youtubeTab.classList.remove('border-b-2', 'border-red-600', 'text-red-600');
+            youtubeTab.classList.add('text-gray-500');
+            
+            linkedinContent.classList.remove('hidden');
+            youtubeContent.classList.add('hidden');
+            ytResult.classList.add('hidden');
+            liResult.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+        });
+        
+        // YouTube form submission
+        ytForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const formData = new FormData(form);
-            const requestData = Object.fromEntries(formData.entries());
+            const formData = new FormData(ytForm);
+            const requestData = {
+                ...Object.fromEntries(formData.entries()),
+                type: 'youtube'
+            };
             
             if (!requestData.transcript || requestData.transcript.trim().length < 50) {
                 errorDiv.classList.remove('hidden');
@@ -88,7 +177,10 @@ import Layout from '../layouts/Layout.astro';
             
             // Show loading state
             loading.classList.remove('hidden');
-            result.classList.add('hidden');
+            youtubeSpinner.classList.remove('hidden');
+            linkedinSpinner.classList.add('hidden');
+            ytResult.classList.add('hidden');
+            liResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
             
             try {
@@ -108,7 +200,7 @@ import Layout from '../layouts/Layout.astro';
                 
                 // Hide loading, show result
                 loading.classList.add('hidden');
-                result.classList.remove('hidden');
+                ytResult.classList.remove('hidden');
                 
                 // Display the generated content
                 transcriptContent.textContent = data.transcript;
@@ -130,10 +222,66 @@ import Layout from '../layouts/Layout.astro';
             }
         });
         
+        // LinkedIn form submission
+        liForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(liForm);
+            const requestData = {
+                ...Object.fromEntries(formData.entries()),
+                type: 'linkedin'
+            };
+            
+            if (!requestData.transcript || requestData.transcript.trim().length < 50) {
+                errorDiv.classList.remove('hidden');
+                errorMessage.textContent = 'Bitte gib ein gültiges Transkript ein (mindestens 50 Zeichen).';
+                return;
+            }
+            
+            // Show loading state
+            loading.classList.remove('hidden');
+            youtubeSpinner.classList.add('hidden');
+            linkedinSpinner.classList.remove('hidden');
+            ytResult.classList.add('hidden');
+            liResult.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData),
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Hide loading, show result
+                loading.classList.add('hidden');
+                liResult.classList.remove('hidden');
+                
+                // Display the generated content
+                linkedinContentResult.textContent = data.linkedinPost;
+                
+            } catch (error) {
+                // Hide loading, show error
+                loading.classList.add('hidden');
+                errorDiv.classList.remove('hidden');
+                errorMessage.textContent = error.message || 'Ein Fehler ist beim Generieren des Inhalts aufgetreten.';
+                console.error('Fehler:', error);
+            }
+        });
+        
         // Copy to clipboard functionality
         copyTranscriptBtn.addEventListener('click', () => copyToClipboard(transcriptContent, copyTranscriptBtn));
         copyTitleBtn.addEventListener('click', () => copyToClipboard(titleContent, copyTitleBtn));
         copyDescriptionBtn.addEventListener('click', () => copyToClipboard(descriptionContent, copyDescriptionBtn));
+        copyLinkedinBtn.addEventListener('click', () => copyToClipboard(linkedinContentResult, copyLinkedinBtn));
         
         function copyToClipboard(contentElement, buttonElement) {
             const content = contentElement.textContent;
