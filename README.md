@@ -48,7 +48,7 @@ The application is specifically designed for the developer community and uses in
 
 4. Start the development server:
    ```bash
-   npm run dev
+   npx astro dev -vvv
    ```
 
 ## Usage
