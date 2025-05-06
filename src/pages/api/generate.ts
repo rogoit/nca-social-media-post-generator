@@ -1,5 +1,5 @@
-import type { APIRoute } from 'astro';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import type { APIRoute } from "astro";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Initialize Google Gemini API
 const genAI = new GoogleGenerativeAI(import.meta.env.GOOGLE_GEMINI_API_KEY);
@@ -7,19 +7,19 @@ const genAI = new GoogleGenerativeAI(import.meta.env.GOOGLE_GEMINI_API_KEY);
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    let { transcript, type = 'youtube' } = body;
+    let { transcript, type = "youtube" } = body;
     let transcriptCleaned = false;
 
     // Validate required fields
     if (!transcript) {
       return new Response(
         JSON.stringify({
-          error: 'Transkript fehlt',
+          error: "Transkript fehlt",
         }),
         {
           status: 400,
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
@@ -29,69 +29,68 @@ export const POST: APIRoute = async ({ request }) => {
     const words = transcript.trim().split(/\s+/);
     if (words.length > 0 && words[words.length - 1].length === 1) {
       words.pop(); // Entferne das letzte Wort, wenn es nur ein Zeichen ist
-      transcript = words.join(' ');
+      transcript = words.join(" ");
       transcriptCleaned = true;
-      console.log('Ein einzelnes Zeichen am Ende des Transkripts wurde entfernt.');
+      console.log(
+        "Ein einzelnes Zeichen am Ende des Transkripts wurde entfernt."
+      );
     }
 
     // Create a prompt based on the user input and content type
     let prompt;
-    if (type === 'linkedin') {
+    if (type === "linkedin") {
       prompt = createLinkedinPrompt(transcript);
     } else {
       prompt = createYoutubePrompt(transcript);
     }
 
     // Generate text using Google Gemini API
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     // Debug: Log the raw AI response
     console.log(`--- DEBUG: RAW AI RESPONSE FOR ${type.toUpperCase()} ---`);
     console.log(text);
-    console.log('--- END RAW AI RESPONSE ---');
+    console.log("--- END RAW AI RESPONSE ---");
 
     // Parse the structured response from the AI based on content type
     let parsedResponse;
-    if (type === 'linkedin') {
+    if (type === "linkedin") {
       parsedResponse = parseLinkedinResponse(text);
     } else {
       parsedResponse = parseYoutubeResponse(text);
     }
-    
+
     // Debug: Log the parsed response
-    console.log('--- DEBUG: PARSED RESPONSE ---');
+    console.log("--- DEBUG: PARSED RESPONSE ---");
     console.log(JSON.stringify(parsedResponse, null, 2));
-    console.log('--- END PARSED RESPONSE ---');
+    console.log("--- END PARSED RESPONSE ---");
 
     // Füge Information hinzu, wenn das Transkript bereinigt wurde
     const responseData = {
       ...parsedResponse,
-      transcriptCleaned: transcriptCleaned
+      transcriptCleaned: transcriptCleaned,
     };
 
-    return new Response(
-      JSON.stringify(responseData),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    return new Response(JSON.stringify(responseData), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   } catch (error) {
-    console.error('Fehler beim Generieren des Inhalts:', error);
-    
+    console.error("Fehler beim Generieren des Inhalts:", error);
+
     return new Response(
       JSON.stringify({
-        error: 'Fehler beim Generieren des Inhalts',
+        error: "Fehler beim Generieren des Inhalts",
       }),
       {
         status: 500,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );
@@ -110,17 +109,21 @@ Für den Titel:
 - Hohe Lesbarkeit steht an erster Stelle! Verwende KEINE Sonderzeichen wie (), &, #, ! oder ähnliches
 - KEINE übertriebenen Wörter wie "ultimativ", "revolutionär", "unglaublich" - halte es sachlich und präzise
 - Verwende klare, direkte Sprache mit starken Verben und konkretem Nutzen
-- Setze auf präzise Fachbegriffe statt übertriebene Adjektive
+- Setze auf präzise Fachbegriffe statt übertriebene Adjektive (sofern im Transkript vorhanden)
 - Idealerweise 60-70 Zeichen (nicht zu kurz!)
 
 Für die Beschreibung:
-- WICHTIG: Die Zielgruppe sind Entwickler und die Developer-Community! Sprich die Leser entsprechend mit "ihr/euch/eure" (nicht mit "Sie/Ihnen") an und verwende eine lockere, technikaffine Sprache!
+- WICHTIG: Die Zielgruppe sind Entwickler und die Developer-Community! Sprich die Leser entsprechend mit "ihr/euch/eure" (nicht mit "Sie/Ihnen") an und verwende eine lockere, technikaffine Sprache! ABER: Der Inhalt MUSS sich strikt auf das Transkript beziehen!
 - TOTAL WICHTIG: Jeder Absatz soll etwa 500 Zeichen lang sein! Die gesamte Beschreibung soll ca. 1500 Zeichen umfassen.
-- Die Beschreibung MUSS sehr detailliert und umfangreich sein mit vielen Informationen und Kontext!
-- Absatz 1: Hauptproblem und Lösung (8-10 Sätze) - WICHTIG: Der ERSTE SATZ muss mit dem Hauptkeyword beginnen!
-- Absatz 2: Ausführliche Details/Vorteile der im Video vorgestellten Methode (8-10 Sätze) - Erwähne konkrete Entwickler-Tools und technische Details!
-- Absatz 3: Detaillierter Call-to-Action, was der Zuschauer als nächstes tun soll (8-10 Sätze) - Direkte Ansprache der Developer-Community mit konkreten nächsten Schritten!
-- Verwende in allen Absätzen die wichtigsten Keywords, technische Begriffe und sehr detaillierte Beschreibungen
+- Die Beschreibung MUSS sehr detailliert und umfangreich sein mit vielen Informationen und Kontext, ABER **AUSSCHLIESSLICH BASIEREND AUF DEM TRANSKRIPTINHALT!** Erfinde nichts!
+- Absatz 1: Hauptproblem und Lösung/Diskussionspunkt (8-10 Sätze) - WICHTIG: Der ERSTE SATZ muss mit dem Hauptkeyword beginnen! **Stelle sicher, dass Problem und Diskussion direkt aus dem Transkript abgeleitet sind.**
+- Absatz 2: Ausführliche Details/Argumente/Punkte, die **im Video (Transkript) vorgestellt werden** (8-10 Sätze) - Erwähne konkrete Entwickler-Tools und technische Details **NUR, WENN SIE EXPLIZIT IM TRANSKRIPT VORKOMMEN!** Andernfalls, detailliere die im Transkript genannten allgemeinen Argumente, Aspekte oder Meinungen. **Erfinde keine Tools oder technischen Details, wenn sie nicht genannt wurden!**
+- Absatz 3: Detaillierter Call-to-Action, was der Zuschauer als nächstes tun soll (8-10 Sätze) - Direkte Ansprache der Developer-Community mit konkreten nächsten Schritten, die sich **logisch aus dem Transkriptinhalt ergeben** (z.B. zur Diskussion des im Video genannten Problems aufrufen, Meinung in Kommentaren teilen).
+- Verwende in allen Absätzen die wichtigsten Keywords und Begriffe **aus dem Transkript**.
+
+Hinweise:
+- Keine Programmiersprache schreiben, die nicht im Transkript vorkommt.
+- **ABSOLUT KRITISCH: Schreibe in der Beschreibung NUR das, was im Video (Transkript) besprochen wurde. Erfinde KEINE Informationen, Beispiele, Tools, Strategien oder Meinungen, die nicht explizit genannt werden, auch wenn andere Anweisungen (wie Zielgruppenansprache oder Länge) dies nahezulegen scheinen. Die Treue zum Transkriptinhalt hat oberste Priorität! Wenn das Transkript keine Details für Entwickler enthält, dann schreibe auch keine solchen Details in die Beschreibung, sondern bleibe allgemein, aber behalte den lockeren "ihr/euch"-Ton bei.**
 
 Bitte formatiere deine Antwort wie folgt (benutze weiterhin die englischen Abschnittsbezeichnungen, aber der Inhalt soll auf Deutsch sein):
 
@@ -131,7 +134,7 @@ TITLE:
 [YouTube-Titel, 60-70 Zeichen]
 
 DESCRIPTION:
-[SEHR LANGE YouTube-Beschreibung in GENAU 3 sehr ausführlichen Absätzen mit jeweils ca. 500 Zeichen, insgesamt ca. 1500 Zeichen, mit informeller Du/Ihr-Ansprache für Entwickler]
+[SEHR LANGE YouTube-Beschreibung in GENAU 3 sehr ausführlichen Absätzen mit jeweils ca. 500 Zeichen, insgesamt ca. 1500 Zeichen, mit informeller Du/Ihr-Ansprache für Entwickler, ABER STRIKT AM TRANSKRIPTINHALT ORIENTIERT]
 
 Hier ist das Transkript:
 ${transcript}`;
@@ -173,9 +176,9 @@ function parseYoutubeResponse(text: string): {
 } {
   // Default values in case parsing fails
   let result = {
-    transcript: '',
-    title: '',
-    description: ''
+    transcript: "",
+    title: "",
+    description: "",
   };
 
   try {
@@ -197,7 +200,7 @@ function parseYoutubeResponse(text: string): {
       result.description = descriptionMatch[1].trim();
     }
   } catch (error) {
-    console.error('Fehler beim Parsen der KI-Antwort:', error);
+    console.error("Fehler beim Parsen der KI-Antwort:", error);
   }
 
   return result;
@@ -208,7 +211,7 @@ function parseLinkedinResponse(text: string): {
 } {
   // Default values in case parsing fails
   let result = {
-    linkedinPost: ''
+    linkedinPost: "",
   };
 
   try {
@@ -218,7 +221,7 @@ function parseLinkedinResponse(text: string): {
       result.linkedinPost = linkedinMatch[1].trim();
     }
   } catch (error) {
-    console.error('Fehler beim Parsen der KI-Antwort:', error);
+    console.error("Fehler beim Parsen der KI-Antwort:", error);
   }
 
   return result;
