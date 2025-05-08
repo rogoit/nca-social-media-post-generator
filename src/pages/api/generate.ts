@@ -4,6 +4,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // Initialize Google Gemini API
 const genAI = new GoogleGenerativeAI(import.meta.env.GOOGLE_GEMINI_API_KEY);
 
+// Global prompt helpers for consistent content generation
+const brandNamesPrompt = "Achte auf die richtige Schreibweise dieser Marken und Begriffe: Pimcore, TYPO3, CypressIO, JavaScript, ChatGPT, OpenAI.";
+const avoidExaggerationPrompt = "KEINE übertriebenen Wörter wie \"ultimativ\", \"revolutionär\", \"unglaublich\" - halte es sachlich und präzise.";
+const informalAddressPrompt = "Verwende eine informelle Anrede (\"ihr/euch/eure\" statt \"Sie/Ihnen\") und einen lockeren, direkten Ton.";
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
@@ -100,6 +105,8 @@ export const POST: APIRoute = async ({ request }) => {
 function createYoutubePrompt(transcript: string): string {
   return `Du bist ein YouTube-Content-Optimierungsassistent. Ich stelle dir ein Transkript aus einem YouTube-Video zur Verfügung, das Fehler, Füllwörter oder unklare Sätze enthalten kann.
 
+${brandNamesPrompt}
+
 Deine Aufgabe ist es:
 1. Eine 100% identische Version des Transkripts zu erstellen mit AUSSCHLIESSLICH korrigierter Interpunktion (Kommas, Punkte). ABSOLUT KEINE Änderungen an Wörtern oder Wortreihenfolge! KEINE Rechtschreibkorrekturen, KEINE Änderungen am Satzbau. NUR Kommata und Punkte hinzufügen/korrigieren wo nötig!
 2. Einen SEO-optimierten, aufmerksamkeitsstarken YouTube-Titel zu generieren (60-70 Zeichen, mit Keyword am Anfang)
@@ -107,13 +114,13 @@ Deine Aufgabe ist es:
 
 Für den Titel:
 - Hohe Lesbarkeit steht an erster Stelle! Verwende KEINE Sonderzeichen wie (), &, #, ! oder ähnliches
-- KEINE übertriebenen Wörter wie "ultimativ", "revolutionär", "unglaublich" - halte es sachlich und präzise
+- ${avoidExaggerationPrompt}
 - Verwende klare, direkte Sprache mit starken Verben und konkretem Nutzen
 - Setze auf präzise Fachbegriffe statt übertriebene Adjektive (sofern im Transkript vorhanden)
 - Idealerweise 60-70 Zeichen (nicht zu kurz!)
 
 Für die Beschreibung:
-- WICHTIG: Die Zielgruppe sind Entwickler und die Developer-Community! Sprich die Leser entsprechend mit "ihr/euch/eure" (nicht mit "Sie/Ihnen") an und verwende eine lockere, technikaffine Sprache! ABER: Der Inhalt MUSS sich strikt auf das Transkript beziehen!
+- WICHTIG: Die Zielgruppe sind Entwickler und die Developer-Community! ${informalAddressPrompt} Verwende eine technikaffine Sprache! ABER: Der Inhalt MUSS sich strikt auf das Transkript beziehen!
 - TOTAL WICHTIG: Jeder Absatz soll etwa 500 Zeichen lang sein! Die gesamte Beschreibung soll ca. 1500 Zeichen umfassen.
 - Die Beschreibung MUSS sehr detailliert und umfangreich sein mit vielen Informationen und Kontext, ABER **AUSSCHLIESSLICH BASIEREND AUF DEM TRANSKRIPTINHALT!** Erfinde nichts!
 - Absatz 1: Hauptproblem und Lösung/Diskussionspunkt (8-10 Sätze) - WICHTIG: Der ERSTE SATZ muss mit dem Hauptkeyword beginnen! **Stelle sicher, dass Problem und Diskussion direkt aus dem Transkript abgeleitet sind.**
@@ -143,16 +150,19 @@ ${transcript}`;
 function createLinkedinPrompt(transcript: string): string {
   return `Du bist ein LinkedIn-Content-Optimierungsassistent. Ich stelle dir ein Transkript zur Verfügung, das ich in einen überzeugenden LinkedIn-Post umwandeln möchte.
 
+${brandNamesPrompt}
+
 Deine Aufgabe ist es, einen professionellen und ansprechenden LinkedIn-Post auf Deutsch zu erstellen, der folgende Spezifikationen erfüllt:
 
 - Zielgruppe: Eigene Follower und Entscheider
 - Thema: Informativ herausstellen
 - Tone of Voice: Soll klar machen, dass ich viel Spaß an den Themen habe und diese direkt helfen; ich bringe das gerne in Demos und Remote Workshops in Teams
-- Anrede: Informelle "ihr" Anrede verwenden, "Demo" nur erwähnen, wenn es um Barrierefreies Webdesign oder Refactoring geht
+- Anrede: ${informalAddressPrompt} "Demo" nur erwähnen, wenn es um Barrierefreies Webdesign oder Refactoring geht
 - Abschluss: Eine sehr gute und motivierende Frage stellen, die dazu einlädt zu antworten und Leser als Experten wertschätzt
 
 Nicht zu verwendende Wörter:
 - Revolution (und ähnliche übertriebene Begriffe)
+${avoidExaggerationPrompt}
 
 Formatierung:
 - LinkedIn-Post sollte zwischen 1000-1500 Zeichen lang sein
