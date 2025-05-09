@@ -15,7 +15,7 @@ let anthropic = new Anthropic({
 });
 
 // Global prompt helpers for consistent content generation
-const brandNamesPrompt = "Achte auf die richtige Schreibweise dieser Marken und Begriffe: Pimcore, TYPO3, CypressIO, JavaScript, ChatGPT, OpenAI.";
+const brandNamesPrompt = "Achte auf die richtige Schreibweise dieser Marken und Begriffe: Pimcore (nicht PimCore oder pimcore), TYPO3 (nicht Typo3 oder typo3), CypressIO (nicht Cypress.io oder cypress), JavaScript (nicht Javascript oder javascript), ChatGPT (nicht Chat-GPT oder chatgpt), OpenAI (nicht Open AI oder openai), React (nicht ReactJS oder react), Node.js (nicht NodeJS oder nodejs), Vue.js (nicht VueJS oder vuejs), TypeScript (nicht Typescript oder typescript).";
 const avoidExaggerationPrompt = "KEINE übertriebenen Wörter wie \"ultimativ\", \"revolutionär\", \"unglaublich\" - halte es sachlich und präzise.";
 const informalAddressPrompt = "Verwende eine informelle Anrede (\"ihr/euch/eure\" statt \"Sie/Ihnen\") und einen lockeren, direkten Ton.";
 
@@ -139,7 +139,7 @@ function createYoutubePrompt(transcript: string): string {
 ${brandNamesPrompt}
 
 Deine Aufgabe ist es:
-1. Eine 100% identische Version des Transkripts zu erstellen mit AUSSCHLIESSLICH korrigierter Interpunktion (Kommas, Punkte). ABSOLUT KEINE Änderungen an Wörtern oder Wortreihenfolge! KEINE Rechtschreibkorrekturen, KEINE Änderungen am Satzbau. NUR Kommata und Punkte hinzufügen/korrigieren wo nötig!
+1. Eine 100% identische Version des Transkripts zu erstellen mit AUSSCHLIESSLICH korrigierter Interpunktion (Kommas, Punkte) und korrekter Schreibweise der Marken und Begriffe im Brandnames-Hinweis. EINZIGE AUSNAHME: Die im Brandnames-Hinweis genannten Marken und Begriffe müssen in der korrekten Schreibweise (Pimcore, TYPO3, CypressIO, JavaScript, ChatGPT, OpenAI) angegeben werden. Ansonsten ABSOLUT KEINE Änderungen an anderen Wörtern oder Wortreihenfolge! KEINE weiteren Rechtschreibkorrekturen, KEINE Änderungen am Satzbau. NUR Kommata und Punkte hinzufügen/korrigieren wo nötig plus korrekte Marken-Schreibweise!
 2. Einen SEO-optimierten, aufmerksamkeitsstarken YouTube-Titel zu generieren (60-70 Zeichen, mit Keyword am Anfang)
 3. Eine SEHR LANGE YouTube-Beschreibung zu erstellen (ca. 1500 Zeichen, strukturiert in GENAU 3 sehr ausführlichen Absätzen)
 
@@ -198,7 +198,7 @@ ${avoidExaggerationPrompt}
 Formatierung:
 - LinkedIn-Post sollte zwischen 1000-1500 Zeichen lang sein
 - Verwende Absätze zur besseren Lesbarkeit
-- Nutze maximal ein Emoji pro Absatz (nicht übertreiben)
+- WICHTIG: KEINE EMOJIS VERWENDEN - verzichte komplett auf Emojis im Text
 - Füge 3-5 relevante Hashtags am Ende hinzu
 
 Bitte formatiere deine Antwort wie folgt (benutze die englische Bezeichnung "LINKEDIN POST", aber der Inhalt soll komplett auf Deutsch sein):
