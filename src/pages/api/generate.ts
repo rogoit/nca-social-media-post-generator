@@ -212,7 +212,7 @@ ${transcript}`;
 
 function createYoutubePrompt(transcript: string): string {
   const base = createPromptBase(transcript);
-  return `Du bist ein YouTube-Content-Optimierungsassistent. Ich stelle dir ein Transkript aus einem YouTube-Video zur Verfügung, das Fehler, Füllwörter oder unklare Sätze enthalten kann.
+  return `Du bist ein YouTube-Content-Optimierungsassistent für Entwickler-Content. Wichtiger Hinweis: Es handelt sich um YouTube SHORTS, NICHT um lange Videos.
 
 ${base}
 
@@ -222,8 +222,9 @@ Deine Aufgabe ist es:
 3. Eine SEHR LANGE YouTube-Beschreibung zu erstellen (ca. 1500 Zeichen, strukturiert in GENAU 3 sehr ausführlichen Absätzen)
 
 Für den Titel:
+- Stelle eine kontroverse These auf oder provoziere eine Diskussion (Beispiel: "PHP ist 2024 immer noch die beste Wahl für...")
+- Nutze Formulierungen wie "Meine Meinung zu...", "Warum ich denke, dass...", "3 Gründe warum..."
 - Hohe Lesbarkeit steht an erster Stelle! Verwende KEINE Sonderzeichen wie (), &, #, ! oder ähnliches
-- Verwende klare, direkte Sprache mit starken Verben und konkretem Nutzen
 - Setze auf präzise Fachbegriffe statt übertriebene Adjektive (sofern im Transkript vorhanden)
 - Idealerweise 60-70 Zeichen (nicht zu kurz!)
 
@@ -231,14 +232,15 @@ Für die Beschreibung:
 - WICHTIG: Die Zielgruppe sind Entwickler und die Developer-Community! Verwende eine technikaffine Sprache! ABER: Der Inhalt MUSS sich strikt auf das Transkript beziehen!
 - TOTAL WICHTIG: Jeder Absatz soll etwa 500 Zeichen lang sein! Die gesamte Beschreibung soll ca. 1500 Zeichen umfassen.
 - Die Beschreibung MUSS sehr detailliert und umfangreich sein mit vielen Informationen und Kontext, ABER **AUSSCHLIESSLICH BASIEREND AUF DEM TRANSKRIPTINHALT!** Erfinde nichts!
-- Absatz 1: Hauptproblem und Lösung/Diskussionspunkt (8-10 Sätze) - WICHTIG: Der ERSTE SATZ muss mit dem Hauptkeyword beginnen! **Stelle sicher, dass Problem und Diskussion direkt aus dem Transkript abgeleitet sind.**
-- Absatz 2: Ausführliche Details/Argumente/Punkte, die **im Video (Transkript) vorgestellt werden** (8-10 Sätze) - Erwähne konkrete Entwickler-Tools und technische Details **NUR, WENN SIE EXPLIZIT IM TRANSKRIPT VORKOMMEN!** Andernfalls, detailliere die im Transkript genannten allgemeinen Argumente, Aspekte oder Meinungen. **Erfinde keine Tools oder technischen Details, wenn sie nicht genannt wurden!**
-- Absatz 3: Detaillierter Call-to-Action, was der Zuschauer als nächstes tun soll (8-10 Sätze) - Direkte Ansprache der Developer-Community mit konkreten nächsten Schritten, die sich **logisch aus dem Transkriptinhalt ergeben** (z.B. zur Diskussion des im Video genannten Problems aufrufen, Meinung in Kommentaren teilen).
-- Verwende in allen Absätzen die wichtigsten Keywords und Begriffe **aus dem Transkript**.
+- Absatz 1: Stelle eine These oder kontroverse Meinung auf, die sich aus dem Transkript ergibt (8-10 Sätze) - WICHTIG: Der ERSTE SATZ muss mit dem Hauptkeyword beginnen und direkt eine Meinung oder These präsentieren!
+- Absatz 2: Führe Argumente und Gegenpositionen aus **die im Short (Transkript) erwähnt werden** (8-10 Sätze) - Formuliere Fragen wie "Was denkt ihr zu..." oder "Habt ihr ähnliche Erfahrungen mit..."
+- Absatz 3: Fordere die Community zur Diskussion auf (8-10 Sätze) - Stelle konkrete Fragen, lade zu Gegenargumenten ein, frage nach eigenen Erfahrungen!
+- Verwende Formulierungen wie: "Ich behaupte...", "Meiner Meinung nach...", "Was ist eure Erfahrung mit...", "Widersprecht mir gerne in den Kommentaren!"
 
 Hinweise:
 - Keine Programmiersprache schreiben, die nicht im Transkript vorkommt.
-- **ABSOLUT KRITISCH: Schreibe in der Beschreibung NUR das, was im Video (Transkript) besprochen wurde. Erfinde KEINE Informationen, Beispiele, Tools, Strategien oder Meinungen, die nicht explizit genannt werden, auch wenn andere Anweisungen (wie Zielgruppenansprache oder Länge) dies nahezulegen scheinen. Die Treue zum Transkriptinhalt hat oberste Priorität! Wenn das Transkript keine Details für Entwickler enthält, dann schreibe auch keine solchen Details in die Beschreibung, sondern bleibe allgemein, aber behalte den lockeren "ihr/euch"-Ton bei.**
+- NIEMALS Formulierungen wie "Im Video diskutieren wir" verwenden - es sind SHORTS!
+- **ABSOLUT KRITISCH: Schreibe in der Beschreibung NUR das, was im Short (Transkript) besprochen wurde. Erfinde KEINE Informationen, Beispiele, Tools, Strategien oder Meinungen, die nicht explizit genannt werden.**
 
 Bitte formatiere deine Antwort wie folgt (benutze weiterhin die englischen Abschnittsbezeichnungen, aber der Inhalt soll auf Deutsch sein):
 
@@ -246,10 +248,10 @@ TRANSCRIPT:
 [korrigierter Transkripttext]
 
 TITLE:
-[YouTube-Titel, 60-70 Zeichen]
+[YouTube-Titel mit These/Meinung, 60-70 Zeichen]
 
 DESCRIPTION:
-[SEHR LANGE YouTube-Beschreibung in GENAU 3 sehr ausführlichen Absätzen mit jeweils ca. 500 Zeichen, insgesamt ca. 1500 Zeichen, mit informeller Du/Ihr-Ansprache für Entwickler, ABER STRIKT AM TRANSKRIPTINHALT ORIENTIERT]`;
+[SEHR LANGE YouTube-Beschreibung in GENAU 3 sehr ausführlichen Absätzen mit jeweils ca. 500 Zeichen, insgesamt ca. 1500 Zeichen, mit kontroversen Thesen und Fragen an die Community]`;
 }
 
 function createLinkedinPrompt(transcript: string): string {
