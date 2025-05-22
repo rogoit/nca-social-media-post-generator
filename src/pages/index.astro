@@ -36,6 +36,25 @@ import Layout from '../layouts/Layout.astro';
                         <textarea id="yt-transcript" name="transcript" class="hidden"></textarea>
                     </div>
 
+                    <!-- Optional Video Duration Input -->
+                    <div>
+                        <label for="video-duration" class="block text-sm font-medium text-gray-700 mb-2">
+                            Video-Dauer (optional)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="video-duration" 
+                            name="videoDuration"
+                            placeholder="z.B. 7:16" 
+                            pattern="^([0-9]{1,2}):([0-5][0-9])$"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                            title="Format: MM:SS (z.B. 7:16)"
+                        />
+                        <p class="mt-1 text-xs text-gray-500">
+                            Bei Eingabe der Video-Dauer werden automatisch Zeitstempel mit Topics generiert
+                        </p>
+                    </div>
+
                     <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         YouTube Content generieren
                     </button>
@@ -95,6 +114,12 @@ import Layout from '../layouts/Layout.astro';
                     <div id="description-content" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
                 </div>
                 
+                <!-- Timestamps Section (only shown when generated) -->
+                <div id="timestamps-section" class="hidden">
+                    <h2 class="text-lg font-medium text-gray-900 mb-2">Zeitstempel</h2>
+                    <div id="timestamps-content" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
+                </div>
+                
                 <div class="flex justify-end space-x-4">
                     <button id="copy-transcript-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         Transkript kopieren
@@ -104,6 +129,9 @@ import Layout from '../layouts/Layout.astro';
                     </button>
                     <button id="copy-description-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         Beschreibung kopieren
+                    </button>
+                    <button id="copy-timestamps-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 hidden">
+                        Zeitstempel kopieren
                     </button>
                 </div>
             </div>
@@ -181,6 +209,8 @@ import Layout from '../layouts/Layout.astro';
         const transcriptContent = document.getElementById('transcript-content');
         const titleContent = document.getElementById('title-content');
         const descriptionContent = document.getElementById('description-content');
+        const timestampsSection = document.getElementById('timestamps-section');
+        const timestampsContent = document.getElementById('timestamps-content');
         const linkedinContentResult = document.getElementById('linkedin-content-result');
         const twitterContentResult = document.getElementById('twitter-content-result');
 
@@ -192,6 +222,7 @@ import Layout from '../layouts/Layout.astro';
         const copyTranscriptBtn = document.getElementById('copy-transcript-btn');
         const copyTitleBtn = document.getElementById('copy-title-btn');
         const copyDescriptionBtn = document.getElementById('copy-description-btn');
+        const copyTimestampsBtn = document.getElementById('copy-timestamps-btn');
         const copyLinkedinBtn = document.getElementById('copy-linkedin-btn');
         const copyTwitterBtn = document.getElementById('copy-twitter-btn');
 
@@ -305,6 +336,17 @@ import Layout from '../layouts/Layout.astro';
                 type: 'youtube'
             };
 
+            // Validate video duration format if provided
+            const videoDuration = requestData.videoDuration;
+            if (videoDuration && videoDuration.trim() !== '') {
+                const durationPattern = /^([0-9]{1,2}):([0-5][0-9])$/;
+                if (!durationPattern.test(videoDuration.trim())) {
+                    errorDiv.classList.remove('hidden');
+                    errorMessage.textContent = 'Bitte gib die Video-Dauer im Format MM:SS ein (z.B. 7:16).';
+                    return;
+                }
+            }
+
             if (!requestData.transcript || requestData.transcript.trim().length < 50) {
                 errorDiv.classList.remove('hidden');
                 errorMessage.textContent = 'Bitte gib ein gültiges Transkript ein (mindestens 50 Zeichen).';
@@ -344,6 +386,16 @@ import Layout from '../layouts/Layout.astro';
                 transcriptContent.textContent = data.transcript;
                 titleContent.textContent = data.title;
                 descriptionContent.textContent = data.description;
+
+                // Display timestamps if generated
+                if (data.timestamps) {
+                    timestampsContent.textContent = data.timestamps;
+                    timestampsSection.classList.remove('hidden');
+                    copyTimestampsBtn.classList.remove('hidden');
+                } else {
+                    timestampsSection.classList.add('hidden');
+                    copyTimestampsBtn.classList.add('hidden');
+                }
 
                 // Zeige Hinweis an, wenn das Transkript bereinigt wurde
                 const transcriptCleaned = document.getElementById('transcript-cleaned');
@@ -504,6 +556,7 @@ import Layout from '../layouts/Layout.astro';
         copyTranscriptBtn.addEventListener('click', () => copyToClipboard(transcriptContent, copyTranscriptBtn));
         copyTitleBtn.addEventListener('click', () => copyToClipboard(titleContent, copyTitleBtn));
         copyDescriptionBtn.addEventListener('click', () => copyToClipboard(descriptionContent, copyDescriptionBtn));
+        copyTimestampsBtn.addEventListener('click', () => copyToClipboard(timestampsContent, copyTimestampsBtn));
         copyLinkedinBtn.addEventListener('click', () => copyToClipboard(linkedinContentResult, copyLinkedinBtn));
         copyTwitterBtn.addEventListener('click', () => copyToClipboard(twitterContentResult, copyTwitterBtn));
         
