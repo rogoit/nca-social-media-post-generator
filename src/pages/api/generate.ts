@@ -5,7 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 // Type definitions
 interface GenerateRequest {
   transcript: string;
-  type?: "youtube" | "linkedin";
+  type?: "youtube" | "linkedin" | "twitter";
 }
 
 interface GenerateResponse {
@@ -13,6 +13,7 @@ interface GenerateResponse {
   title?: string;
   description?: string;
   linkedinPost?: string;
+  twitterPost?: string;
   transcriptCleaned: boolean;
   modelUsed: string;
   error?: string;
@@ -65,10 +66,10 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Validate type
-    if (type !== "youtube" && type !== "linkedin") {
+    if (type !== "youtube" && type !== "linkedin" && type !== "twitter") {
       return new Response(
         JSON.stringify({
-          error: "Ungültiger Typ. Erlaubt sind: youtube, linkedin",
+          error: "Ungültiger Typ. Erlaubt sind: youtube, linkedin, twitter",
         }),
         {
           status: 400,
@@ -90,7 +91,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Create prompt based on content type
     const prompt = type === "linkedin" 
-      ? createLinkedinPrompt(transcript) 
+      ? createLinkedinPrompt(transcript)
+      : type === "twitter"
+      ? createTwitterPrompt(transcript)
       : createYoutubePrompt(transcript);
 
     // Try to generate content with AI providers
@@ -166,7 +169,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Parse the structured response from AI
     const parsedResponse = type === "linkedin" 
-      ? parseLinkedinResponse(text!) 
+      ? parseLinkedinResponse(text!)
+      : type === "twitter"
+      ? parseTwitterResponse(text!)
       : parseYoutubeResponse(text!);
 
     // Add metadata to response
@@ -289,6 +294,43 @@ LINKEDIN POST:
 [Der komplette LinkedIn-Post auf Deutsch mit Absätzen und Hashtags]`;
 }
 
+function createTwitterPrompt(transcript: string): string {
+  const base = createPromptBase(transcript);
+  return `Du bist ein Twitter-Content-Optimierungsassistent für Entwickler-Content. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden Twitter-Post umwandeln möchte.
+
+${base}
+
+Deine Aufgabe ist es, einen prägnanten und ansprechenden Twitter-Post auf Deutsch zu erstellen, der folgende Spezifikationen erfüllt:
+
+- Zielgruppe: Developer-Community und Tech-Enthusiasten
+- Tone of Voice: Direkt, meinungsstark und diskussionsfördernd
+- Zeichenlimit: Maximal 280 Zeichen
+- Stil: Prägnant, auf den Punkt, provokativ aber sachlich
+
+Inhaltliche Anforderungen:
+- Stelle eine These oder kontroverse Meinung auf, die sich aus dem Transkript ergibt
+- Verwende eine direkte, persönliche Ansprache ("Ich glaube...", "Meine Erfahrung...")
+- Fordere zur Diskussion auf mit Formulierungen wie "Was meint ihr?" oder "Stimmt ihr zu?"
+- Nutze 1-2 relevante Hashtags (maximal!)
+
+Kontext-spezifische Beispiele:
+- Bei AI-Themen: Erwähne relevante AI-Tools wie ChatGPT, Gemini, Claude
+- Bei PHP-Themen: Erwähne PHP-spezifische Tools wie PHPUnit, PHPStan, RectorPHP
+- Bei JavaScript-Themen: Erwähne JS-Tools wie Node.js, TypeScript, Vitest
+- WICHTIG: Verwende NUR die Tools/Technologien, die inhaltlich zum Hauptthema passen
+
+Formatierung:
+- KEINE Emojis verwenden
+- Kurze, prägnante Sätze
+- Maximal 280 Zeichen inklusive Hashtags
+- 1-2 relevante Hashtags am Ende
+
+Bitte formatiere deine Antwort wie folgt (benutze die englische Bezeichnung "TWITTER POST", aber der Inhalt soll komplett auf Deutsch sein):
+
+TWITTER POST:
+[Der komplette Twitter-Post auf Deutsch, maximal 280 Zeichen mit Hashtags]`;
+}
+
 function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
   // Default values in case parsing fails
   const result: Partial<GenerateResponse> = {
@@ -328,6 +370,21 @@ function parseLinkedinResponse(text: string): Partial<GenerateResponse> {
   const linkedinMatch = text.match(/LINKEDIN POST:\s*([\s\S]*?)(?=$)/);
   if (linkedinMatch?.[1]) {
     result.linkedinPost = linkedinMatch[1].trim();
+  }
+
+  return result;
+}
+
+function parseTwitterResponse(text: string): Partial<GenerateResponse> {
+  // Default values in case parsing fails
+  const result: Partial<GenerateResponse> = {
+    twitterPost: "",
+  };
+
+  // Extract Twitter post
+  const twitterMatch = text.match(/TWITTER POST:\s*([\s\S]*?)(?=$)/);
+  if (twitterMatch?.[1]) {
+    result.twitterPost = twitterMatch[1].trim();
   }
 
   return result;
