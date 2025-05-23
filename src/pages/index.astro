@@ -26,6 +26,7 @@ import Layout from '../layouts/Layout.astro';
             <div class="flex border-b border-gray-200 mb-6">
                 <button id="youtube-tab" class="px-6 py-2 font-medium border-b-2 border-red-600 text-red-600 rounded-t-md">YouTube</button>
                 <button id="linkedin-tab" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-600 rounded-t-md">LinkedIn</button>
+                <button id="twitter-tab" class="px-6 py-2 font-medium text-gray-500 hover:text-black rounded-t-md">Twitter</button>
             </div>
 
             <!-- YouTube Form -->
@@ -33,6 +34,25 @@ import Layout from '../layouts/Layout.astro';
                 <form id="yt-form" class="space-y-6">
                     <div class="hidden">
                         <textarea id="yt-transcript" name="transcript" class="hidden"></textarea>
+                    </div>
+
+                    <!-- Optional Video Duration Input -->
+                    <div>
+                        <label for="video-duration" class="block text-sm font-medium text-gray-700 mb-2">
+                            Video-Dauer (optional)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="video-duration" 
+                            name="videoDuration"
+                            placeholder="z.B. 7:16" 
+                            pattern="^([0-9]{1,2}):([0-5][0-9])$"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                            title="Format: MM:SS (z.B. 7:16)"
+                        />
+                        <p class="mt-1 text-xs text-gray-500">
+                            Bei Eingabe der Video-Dauer werden automatisch Zeitstempel mit Topics generiert
+                        </p>
                     </div>
 
                     <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
@@ -53,11 +73,25 @@ import Layout from '../layouts/Layout.astro';
                     </button>
                 </form>
             </div>
+
+            <!-- Twitter Form -->
+            <div id="twitter-content" class="hidden">
+                <form id="tw-form" class="space-y-6">
+                    <div class="hidden">
+                        <textarea id="tw-transcript" name="transcript" class="hidden"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Twitter Post generieren
+                    </button>
+                </form>
+            </div>
             
             <!-- Loading Spinner -->
             <div id="loading" class="hidden mt-6 text-center">
                 <div id="youtube-spinner" class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600"></div>
                 <div id="linkedin-spinner" class="hidden inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+                <div id="twitter-spinner" class="hidden inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
                 <p class="mt-2 text-gray-600">Transkript wird analysiert und Content generiert...</p>
             </div>
             
@@ -80,6 +114,12 @@ import Layout from '../layouts/Layout.astro';
                     <div id="description-content" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
                 </div>
                 
+                <!-- Timestamps Section (only shown when generated) -->
+                <div id="timestamps-section" class="hidden">
+                    <h2 class="text-lg font-medium text-gray-900 mb-2">Zeitstempel</h2>
+                    <div id="timestamps-content" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
+                </div>
+                
                 <div class="flex justify-end space-x-4">
                     <button id="copy-transcript-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         Transkript kopieren
@@ -89,6 +129,9 @@ import Layout from '../layouts/Layout.astro';
                     </button>
                     <button id="copy-description-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         Beschreibung kopieren
+                    </button>
+                    <button id="copy-timestamps-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 hidden">
+                        Zeitstempel kopieren
                     </button>
                 </div>
             </div>
@@ -108,6 +151,21 @@ import Layout from '../layouts/Layout.astro';
                 </div>
             </div>
             
+            <!-- Twitter Results -->
+            <div id="tw-result" class="hidden mt-6 space-y-6">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900 mb-2">Twitter Post</h2>
+                    <div id="twitter-content-result" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
+                <div id="tw-model-used" class="mt-1 text-xs text-indigo-600">Modell: <span id="tw-model-name"></span></div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button id="copy-twitter-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+                        Twitter Post kopieren
+                    </button>
+                </div>
+            </div>
+            
             <!-- Error Message -->
             <div id="error" class="hidden mt-6 p-4 bg-red-50 text-red-700 rounded-md border border-red-200">
                 <p id="error-message"></p>
@@ -121,14 +179,18 @@ import Layout from '../layouts/Layout.astro';
         // Tabs
         const youtubeTab = document.getElementById('youtube-tab');
         const linkedinTab = document.getElementById('linkedin-tab');
+        const twitterTab = document.getElementById('twitter-tab');
         const youtubeContent = document.getElementById('youtube-content');
         const linkedinContent = document.getElementById('linkedin-content');
+        const twitterContent = document.getElementById('twitter-content');
         const youtubeSpinner = document.getElementById('youtube-spinner');
         const linkedinSpinner = document.getElementById('linkedin-spinner');
+        const twitterSpinner = document.getElementById('twitter-spinner');
 
         // Forms
         const ytForm = document.getElementById('yt-form');
         const liForm = document.getElementById('li-form');
+        const twForm = document.getElementById('tw-form');
 
         // Transcript sharing elements
         const shareToggle = document.getElementById('share-toggle');
@@ -136,16 +198,21 @@ import Layout from '../layouts/Layout.astro';
         const sharedTranscript = document.getElementById('shared-transcript');
         const ytTranscript = document.getElementById('yt-transcript');
         const liTranscript = document.getElementById('li-transcript');
+        const twTranscript = document.getElementById('tw-transcript');
         let isTranscriptShared = true; // Default state is shared
 
         // Results
         const loading = document.getElementById('loading');
         const ytResult = document.getElementById('yt-result');
         const liResult = document.getElementById('li-result');
+        const twResult = document.getElementById('tw-result');
         const transcriptContent = document.getElementById('transcript-content');
         const titleContent = document.getElementById('title-content');
         const descriptionContent = document.getElementById('description-content');
+        const timestampsSection = document.getElementById('timestamps-section');
+        const timestampsContent = document.getElementById('timestamps-content');
         const linkedinContentResult = document.getElementById('linkedin-content-result');
+        const twitterContentResult = document.getElementById('twitter-content-result');
 
         // Error
         const errorDiv = document.getElementById('error');
@@ -155,7 +222,9 @@ import Layout from '../layouts/Layout.astro';
         const copyTranscriptBtn = document.getElementById('copy-transcript-btn');
         const copyTitleBtn = document.getElementById('copy-title-btn');
         const copyDescriptionBtn = document.getElementById('copy-description-btn');
+        const copyTimestampsBtn = document.getElementById('copy-timestamps-btn');
         const copyLinkedinBtn = document.getElementById('copy-linkedin-btn');
+        const copyTwitterBtn = document.getElementById('copy-twitter-btn');
 
         // Initialize toggle button appearance
         toggleSharingAppearance(isTranscriptShared);
@@ -185,9 +254,12 @@ import Layout from '../layouts/Layout.astro';
             youtubeTab.classList.add('border-b-2', 'border-red-600', 'text-red-600');
             linkedinTab.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
             linkedinTab.classList.add('text-gray-500');
+            twitterTab.classList.remove('border-b-2', 'border-black', 'text-black');
+            twitterTab.classList.add('text-gray-500');
 
             youtubeContent.classList.remove('hidden');
             linkedinContent.classList.add('hidden');
+            twitterContent.classList.add('hidden');
 
             // Show YouTube results if they exist
             if (titleContent.textContent || descriptionContent.textContent) {
@@ -196,8 +268,9 @@ import Layout from '../layouts/Layout.astro';
                 ytResult.classList.add('hidden');
             }
 
-            // Hide LinkedIn results
+            // Hide other results
             liResult.classList.add('hidden');
+            twResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
         });
 
@@ -205,9 +278,12 @@ import Layout from '../layouts/Layout.astro';
             linkedinTab.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
             youtubeTab.classList.remove('border-b-2', 'border-red-600', 'text-red-600');
             youtubeTab.classList.add('text-gray-500');
+            twitterTab.classList.remove('border-b-2', 'border-black', 'text-black');
+            twitterTab.classList.add('text-gray-500');
 
             linkedinContent.classList.remove('hidden');
             youtubeContent.classList.add('hidden');
+            twitterContent.classList.add('hidden');
 
             // Show LinkedIn results if they exist
             if (linkedinContentResult.textContent) {
@@ -216,8 +292,33 @@ import Layout from '../layouts/Layout.astro';
                 liResult.classList.add('hidden');
             }
 
-            // Hide YouTube results
+            // Hide other results
             ytResult.classList.add('hidden');
+            twResult.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+        });
+
+        twitterTab.addEventListener('click', () => {
+            twitterTab.classList.add('border-b-2', 'border-black', 'text-black');
+            youtubeTab.classList.remove('border-b-2', 'border-red-600', 'text-red-600');
+            youtubeTab.classList.add('text-gray-500');
+            linkedinTab.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+            linkedinTab.classList.add('text-gray-500');
+
+            twitterContent.classList.remove('hidden');
+            youtubeContent.classList.add('hidden');
+            linkedinContent.classList.add('hidden');
+
+            // Show Twitter results if they exist
+            if (twitterContentResult.textContent) {
+                twResult.classList.remove('hidden');
+            } else {
+                twResult.classList.add('hidden');
+            }
+
+            // Hide other results
+            ytResult.classList.add('hidden');
+            liResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
         });
 
@@ -235,6 +336,17 @@ import Layout from '../layouts/Layout.astro';
                 type: 'youtube'
             };
 
+            // Validate video duration format if provided
+            const videoDuration = requestData.videoDuration;
+            if (videoDuration && videoDuration.trim() !== '') {
+                const durationPattern = /^([0-9]{1,2}):([0-5][0-9])$/;
+                if (!durationPattern.test(videoDuration.trim())) {
+                    errorDiv.classList.remove('hidden');
+                    errorMessage.textContent = 'Bitte gib die Video-Dauer im Format MM:SS ein (z.B. 7:16).';
+                    return;
+                }
+            }
+
             if (!requestData.transcript || requestData.transcript.trim().length < 50) {
                 errorDiv.classList.remove('hidden');
                 errorMessage.textContent = 'Bitte gib ein gültiges Transkript ein (mindestens 50 Zeichen).';
@@ -245,8 +357,10 @@ import Layout from '../layouts/Layout.astro';
             loading.classList.remove('hidden');
             youtubeSpinner.classList.remove('hidden');
             linkedinSpinner.classList.add('hidden');
+            twitterSpinner.classList.add('hidden');
             ytResult.classList.add('hidden');
             liResult.classList.add('hidden');
+            twResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
 
             try {
@@ -272,6 +386,16 @@ import Layout from '../layouts/Layout.astro';
                 transcriptContent.textContent = data.transcript;
                 titleContent.textContent = data.title;
                 descriptionContent.textContent = data.description;
+
+                // Display timestamps if generated
+                if (data.timestamps) {
+                    timestampsContent.textContent = data.timestamps;
+                    timestampsSection.classList.remove('hidden');
+                    copyTimestampsBtn.classList.remove('hidden');
+                } else {
+                    timestampsSection.classList.add('hidden');
+                    copyTimestampsBtn.classList.add('hidden');
+                }
 
                 // Zeige Hinweis an, wenn das Transkript bereinigt wurde
                 const transcriptCleaned = document.getElementById('transcript-cleaned');
@@ -318,8 +442,10 @@ import Layout from '../layouts/Layout.astro';
             loading.classList.remove('hidden');
             youtubeSpinner.classList.add('hidden');
             linkedinSpinner.classList.remove('hidden');
+            twitterSpinner.classList.add('hidden');
             ytResult.classList.add('hidden');
             liResult.classList.add('hidden');
+            twResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
 
             try {
@@ -358,12 +484,81 @@ import Layout from '../layouts/Layout.astro';
                 console.error('Fehler:', error);
             }
         });
+
+        // Twitter form submission
+        twForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get the transcript from the shared input
+            const transcriptText = sharedTranscript.value;
+            twTranscript.value = transcriptText; // Set the form's hidden textarea value
+
+            const formData = new FormData(twForm);
+            const requestData = {
+                ...Object.fromEntries(formData.entries()),
+                type: 'twitter'
+            };
+
+            if (!requestData.transcript || requestData.transcript.trim().length < 50) {
+                errorDiv.classList.remove('hidden');
+                errorMessage.textContent = 'Bitte gib ein gültiges Transkript ein (mindestens 50 Zeichen).';
+                return;
+            }
+
+            // Show loading state
+            loading.classList.remove('hidden');
+            youtubeSpinner.classList.add('hidden');
+            linkedinSpinner.classList.add('hidden');
+            twitterSpinner.classList.remove('hidden');
+            ytResult.classList.add('hidden');
+            liResult.classList.add('hidden');
+            twResult.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                // Hide loading, show result
+                loading.classList.add('hidden');
+                twResult.classList.remove('hidden');
+
+                // Display the generated content
+                twitterContentResult.textContent = data.twitterPost;
+
+                // Display which AI model was used
+                const twModelName = document.getElementById('tw-model-name');
+                if (data.modelUsed && twModelName) {
+                    twModelName.textContent = data.modelUsed;
+                }
+
+            } catch (error) {
+                // Hide loading, show error
+                loading.classList.add('hidden');
+                errorDiv.classList.remove('hidden');
+                errorMessage.textContent = error.message || 'Ein Fehler ist beim Generieren des Inhalts aufgetreten.';
+                console.error('Fehler:', error);
+            }
+        });
         
         // Copy to clipboard functionality
         copyTranscriptBtn.addEventListener('click', () => copyToClipboard(transcriptContent, copyTranscriptBtn));
         copyTitleBtn.addEventListener('click', () => copyToClipboard(titleContent, copyTitleBtn));
         copyDescriptionBtn.addEventListener('click', () => copyToClipboard(descriptionContent, copyDescriptionBtn));
+        copyTimestampsBtn.addEventListener('click', () => copyToClipboard(timestampsContent, copyTimestampsBtn));
         copyLinkedinBtn.addEventListener('click', () => copyToClipboard(linkedinContentResult, copyLinkedinBtn));
+        copyTwitterBtn.addEventListener('click', () => copyToClipboard(twitterContentResult, copyTwitterBtn));
         
         function copyToClipboard(contentElement, buttonElement) {
             const content = contentElement.textContent;

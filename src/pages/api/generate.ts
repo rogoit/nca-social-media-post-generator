@@ -5,14 +5,17 @@ import Anthropic from "@anthropic-ai/sdk";
 // Type definitions
 interface GenerateRequest {
   transcript: string;
-  type?: "youtube" | "linkedin";
+  type?: "youtube" | "linkedin" | "twitter";
+  videoDuration?: string;
 }
 
 interface GenerateResponse {
   transcript?: string;
   title?: string;
   description?: string;
+  timestamps?: string;
   linkedinPost?: string;
+  twitterPost?: string;
   transcriptCleaned: boolean;
   modelUsed: string;
   error?: string;
@@ -45,7 +48,7 @@ const AI_MODELS = {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json() as GenerateRequest;
-    const { type = "youtube" } = body;
+    const { type = "youtube", videoDuration } = body;
     let { transcript } = body;
     let transcriptCleaned = false;
 
@@ -65,10 +68,10 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Validate type
-    if (type !== "youtube" && type !== "linkedin") {
+    if (type !== "youtube" && type !== "linkedin" && type !== "twitter") {
       return new Response(
         JSON.stringify({
-          error: "Ungültiger Typ. Erlaubt sind: youtube, linkedin",
+          error: "Ungültiger Typ. Erlaubt sind: youtube, linkedin, twitter",
         }),
         {
           status: 400,
@@ -90,8 +93,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Create prompt based on content type
     const prompt = type === "linkedin" 
-      ? createLinkedinPrompt(transcript) 
-      : createYoutubePrompt(transcript);
+      ? createLinkedinPrompt(transcript)
+      : type === "twitter"
+      ? createTwitterPrompt(transcript)
+      : createYoutubePrompt(transcript, videoDuration);
 
     // Try to generate content with AI providers
     let text: string;
@@ -166,7 +171,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Parse the structured response from AI
     const parsedResponse = type === "linkedin" 
-      ? parseLinkedinResponse(text!) 
+      ? parseLinkedinResponse(text!)
+      : type === "twitter"
+      ? parseTwitterResponse(text!)
       : parseYoutubeResponse(text!);
 
     // Add metadata to response
@@ -210,7 +217,7 @@ Transkript:
 ${transcript}`;
 }
 
-function createYoutubePrompt(transcript: string): string {
+function createYoutubePrompt(transcript: string, videoDuration?: string): string {
   const base = createPromptBase(transcript);
   return `Du bist ein YouTube-Content-Optimierungsassistent für Entwickler-Content. Wichtiger Hinweis: Es handelt sich um YouTube SHORTS, NICHT um lange Videos.
 
@@ -219,7 +226,8 @@ ${base}
 Deine Aufgabe ist es:
 1. Eine 100% identische Version des Transkripts zu erstellen mit AUSSCHLIESSLICH korrigierter Interpunktion (Kommas, Punkte) und korrekter Schreibweise der Marken und Begriffe im Brandnames-Hinweis. EINZIGE AUSNAHME: Die im Brandnames-Hinweis genannten Marken und Begriffe müssen in der korrekten Schreibweise angegeben werden. Ansonsten ABSOLUT KEINE Änderungen an anderen Wörtern oder Wortreihenfolge! KEINE weiteren Rechtschreibkorrekturen, KEINE Änderungen am Satzbau. NUR Kommata und Punkte hinzufügen/korrigieren wo nötig plus korrekte Marken-Schreibweise!
 2. Einen SEO-optimierten, aufmerksamkeitsstarken YouTube-Titel zu generieren (60-70 Zeichen, mit Keyword am Anfang)
-3. Eine SEHR LANGE YouTube-Beschreibung zu erstellen (ca. 1500 Zeichen, strukturiert in GENAU 3 sehr ausführlichen Absätzen)
+3. Eine SEHR LANGE YouTube-Beschreibung zu erstellen (ca. 1500 Zeichen, strukturiert in GENAU 3 sehr ausführlichen Absätzen)${videoDuration ? `
+4. SEO-optimierte Zeitstempel mit Topics generieren (GENAU 5 Zeitstempel basierend auf der Video-Dauer: ${videoDuration})` : ''}
 
 Für den Titel:
 - Stelle eine kontroverse These auf oder provoziere eine Diskussion (Beispiel: "PHP ist 2024 immer noch die beste Wahl für...")
@@ -240,7 +248,19 @@ Für die Beschreibung:
 Hinweise:
 - Keine Programmiersprache schreiben, die nicht im Transkript vorkommt.
 - NIEMALS Formulierungen wie "Im Video diskutieren wir" verwenden - es sind SHORTS!
-- **ABSOLUT KRITISCH: Schreibe in der Beschreibung NUR das, was im Short (Transkript) besprochen wurde. Erfinde KEINE Informationen, Beispiele, Tools, Strategien oder Meinungen, die nicht explizit genannt werden.**
+- **ABSOLUT KRITISCH: Schreibe in der Beschreibung NUR das, was im Short (Transkript) besprochen wurde. Erfinde KEINE Informationen, Beispiele, Tools, Strategien oder Meinungen, die nicht explizit genannt werden.**${videoDuration ? `
+
+Für die Zeitstempel (nur wenn Video-Dauer angegeben: ${videoDuration}):
+- Erstelle GENAU 5 Zeitstempel gleichmäßig über die Video-Dauer verteilt
+- Der erste Zeitstempel soll immer 0:00 sein
+- Der letzte Zeitstempel soll die angegebene Video-Dauer sein (${videoDuration})
+- Verteile die mittleren 3 Zeitstempel gleichmäßig dazwischen
+- Jeder Zeitstempel soll ein prägnantes, SEO-optimiertes Topic haben (max. 60 Zeichen)
+- Die Topics MÜSSEN sich direkt aus dem Transkriptinhalt ableiten - KEINE erfundenen Topics!
+- Format: "0:00 Topic-Name"
+- Topics sollen als Sprungmarken fungieren und Nutzer zum Klicken animieren
+- Verwende Keywords aus dem Transkript in den Topic-Namen
+- Beispiel: "0:00 Warum PHP 2024 relevant bleibt", "2:15 Moderne PHP-Features im Einsatz"` : ''}
 
 Bitte formatiere deine Antwort wie folgt (benutze weiterhin die englischen Abschnittsbezeichnungen, aber der Inhalt soll auf Deutsch sein):
 
@@ -251,7 +271,10 @@ TITLE:
 [YouTube-Titel mit These/Meinung, 60-70 Zeichen]
 
 DESCRIPTION:
-[SEHR LANGE YouTube-Beschreibung in GENAU 3 sehr ausführlichen Absätzen mit jeweils ca. 500 Zeichen, insgesamt ca. 1500 Zeichen, mit kontroversen Thesen und Fragen an die Community]`;
+[SEHR LANGE YouTube-Beschreibung in GENAU 3 sehr ausführlichen Absätzen mit jeweils ca. 500 Zeichen, insgesamt ca. 1500 Zeichen, mit kontroversen Thesen und Fragen an die Community]${videoDuration ? `
+
+TIMESTAMPS:
+[5 SEO-optimierte Zeitstempel mit Topics, gleichmäßig über ${videoDuration} verteilt]` : ''}`;
 }
 
 function createLinkedinPrompt(transcript: string): string {
@@ -289,6 +312,43 @@ LINKEDIN POST:
 [Der komplette LinkedIn-Post auf Deutsch mit Absätzen und Hashtags]`;
 }
 
+function createTwitterPrompt(transcript: string): string {
+  const base = createPromptBase(transcript);
+  return `Du bist ein Twitter-Content-Optimierungsassistent für Entwickler-Content. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden Twitter-Post umwandeln möchte.
+
+${base}
+
+Deine Aufgabe ist es, einen prägnanten und ansprechenden Twitter-Post auf Deutsch zu erstellen, der folgende Spezifikationen erfüllt:
+
+- Zielgruppe: Developer-Community und Tech-Enthusiasten
+- Tone of Voice: Direkt, meinungsstark und diskussionsfördernd
+- Zeichenlimit: Maximal 280 Zeichen
+- Stil: Prägnant, auf den Punkt, provokativ aber sachlich
+
+Inhaltliche Anforderungen:
+- Stelle eine These oder kontroverse Meinung auf, die sich aus dem Transkript ergibt
+- Verwende eine direkte, persönliche Ansprache ("Ich glaube...", "Meine Erfahrung...")
+- Fordere zur Diskussion auf mit Formulierungen wie "Was meint ihr?" oder "Stimmt ihr zu?"
+- Nutze 1-2 relevante Hashtags (maximal!)
+
+Kontext-spezifische Beispiele:
+- Bei AI-Themen: Erwähne relevante AI-Tools wie ChatGPT, Gemini, Claude
+- Bei PHP-Themen: Erwähne PHP-spezifische Tools wie PHPUnit, PHPStan, RectorPHP
+- Bei JavaScript-Themen: Erwähne JS-Tools wie Node.js, TypeScript, Vitest
+- WICHTIG: Verwende NUR die Tools/Technologien, die inhaltlich zum Hauptthema passen
+
+Formatierung:
+- KEINE Emojis verwenden
+- Kurze, prägnante Sätze
+- Maximal 280 Zeichen inklusive Hashtags
+- 1-2 relevante Hashtags am Ende
+
+Bitte formatiere deine Antwort wie folgt (benutze die englische Bezeichnung "TWITTER POST", aber der Inhalt soll komplett auf Deutsch sein):
+
+TWITTER POST:
+[Der komplette Twitter-Post auf Deutsch, maximal 280 Zeichen mit Hashtags]`;
+}
+
 function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
   // Default values in case parsing fails
   const result: Partial<GenerateResponse> = {
@@ -310,9 +370,15 @@ function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
   }
 
   // Extract description
-  const descriptionMatch = text.match(/DESCRIPTION:\s*([\s\S]*?)(?=$)/);
+  const descriptionMatch = text.match(/DESCRIPTION:\s*([\s\S]*?)(?=TIMESTAMPS:|$)/);
   if (descriptionMatch?.[1]) {
     result.description = descriptionMatch[1].trim();
+  }
+
+  // Extract timestamps (if present)
+  const timestampsMatch = text.match(/TIMESTAMPS:\s*([\s\S]*?)(?=$)/);
+  if (timestampsMatch?.[1]) {
+    result.timestamps = timestampsMatch[1].trim();
   }
 
   return result;
@@ -328,6 +394,21 @@ function parseLinkedinResponse(text: string): Partial<GenerateResponse> {
   const linkedinMatch = text.match(/LINKEDIN POST:\s*([\s\S]*?)(?=$)/);
   if (linkedinMatch?.[1]) {
     result.linkedinPost = linkedinMatch[1].trim();
+  }
+
+  return result;
+}
+
+function parseTwitterResponse(text: string): Partial<GenerateResponse> {
+  // Default values in case parsing fails
+  const result: Partial<GenerateResponse> = {
+    twitterPost: "",
+  };
+
+  // Extract Twitter post
+  const twitterMatch = text.match(/TWITTER POST:\s*([\s\S]*?)(?=$)/);
+  if (twitterMatch?.[1]) {
+    result.twitterPost = twitterMatch[1].trim();
   }
 
   return result;
