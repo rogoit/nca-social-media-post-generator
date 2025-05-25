@@ -5,8 +5,9 @@ import Anthropic from "@anthropic-ai/sdk";
 // Type definitions
 interface GenerateRequest {
   transcript: string;
-  type?: "youtube" | "linkedin" | "twitter";
+  type?: "youtube" | "linkedin" | "twitter" | "keywords";
   videoDuration?: string;
+  keywords?: string[];
 }
 
 interface GenerateResponse {
@@ -16,6 +17,7 @@ interface GenerateResponse {
   timestamps?: string;
   linkedinPost?: string;
   twitterPost?: string;
+  keywords?: string[];
   transcriptCleaned: boolean;
   modelUsed: string;
   error?: string;
@@ -35,7 +37,7 @@ const genAI = new GoogleGenerativeAI(GOOGLE_GEMINI_API_KEY);
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
 // Global prompt helpers for consistent content generation
-const BRAND_NAMES_PROMPT = "Achte auf die richtige Schreibweise dieser Marken und Begriffe: Pimcore (nicht PimCore oder pimcore), TYPO3 (nicht Typo3 oder typo3), CypressIO (nicht Cypress.io oder cypress), JavaScript (nicht Javascript oder javascript), ChatGPT (nicht Chat-GPT oder chatgpt), OpenAI (nicht Open AI oder openai), React (nicht ReactJS oder react), Node.js (nicht NodeJS oder nodejs), Vue.js (nicht VueJS oder vuejs), TypeScript (nicht Typescript oder typescript), PHP (nicht php oder Php), PHPUnit (nicht PhpUnit oder phpunit), PHPStan (nicht Phpstan oder php-stan), RectorPHP (nicht Rector oder rector-php), Vitest (nicht vitest oder vi-test), Make.com (nicht Make, Make.io oder make.com).";
+const BRAND_NAMES_PROMPT = "Achte auf die richtige Schreibweise dieser Marken und Begriffe: Pimcore (nicht PimCore oder pimcore), TYPO3 (nicht Typo3 oder typo3), CypressIO (nicht Cypress.io oder cypress), JavaScript (nicht Javascript oder javascript), ChatGPT (nicht Chat-GPT oder chatgpt), OpenAI (nicht Open AI oder openai), React (nicht ReactJS oder react), Node.js (nicht NodeJS oder nodejs), Vue.js (nicht VueJS oder vuejs), TypeScript (nicht Typescript oder typescript), PHP (nicht php oder Php), PHPUnit (nicht PhpUnit oder phpunit), PHPStan (nicht Phpstan oder php-stan), RectorPHP (nicht Rector oder rector-php), Vitest (nicht vitest oder vi-test), Make.com (nicht Make, Make.io oder make.com), Claude 4 (nicht Claude4 oder claude 4), Claude 3.7 (nicht Claude37 oder claude 3.7), Vibe Coding (nicht vibe coding oder VibeCoding).";
 const AVOID_EXAGGERATION_PROMPT = "KEINE übertriebenen Wörter wie \"ultimativ\", \"revolutionär\", \"unglaublich\" - halte es sachlich und präzise.";
 const INFORMAL_ADDRESS_PROMPT = "Verwende eine informelle Anrede (\"ihr/euch/eure\" statt \"Sie/Ihnen\") und einen lockeren, direkten Ton.";
 
@@ -48,7 +50,7 @@ const AI_MODELS = {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json() as GenerateRequest;
-    const { type = "youtube", videoDuration } = body;
+    const { type = "youtube", videoDuration, keywords } = body;
     let { transcript } = body;
     let transcriptCleaned = false;
 
@@ -68,10 +70,10 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Validate type
-    if (type !== "youtube" && type !== "linkedin" && type !== "twitter") {
+    if (type !== "youtube" && type !== "linkedin" && type !== "twitter" && type !== "keywords") {
       return new Response(
         JSON.stringify({
-          error: "Ungültiger Typ. Erlaubt sind: youtube, linkedin, twitter",
+          error: "Ungültiger Typ. Erlaubt sind: youtube, linkedin, twitter, keywords",
         }),
         {
           status: 400,
@@ -92,11 +94,16 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Create prompt based on content type
-    const prompt = type === "linkedin" 
-      ? createLinkedinPrompt(transcript)
-      : type === "twitter"
-      ? createTwitterPrompt(transcript)
-      : createYoutubePrompt(transcript, videoDuration);
+    let prompt: string;
+    if (type === "linkedin") {
+      prompt = createLinkedinPrompt(transcript, keywords);
+    } else if (type === "twitter") {
+      prompt = createTwitterPrompt(transcript);
+    } else if (type === "keywords") {
+      prompt = createKeywordsPrompt(transcript);
+    } else {
+      prompt = createYoutubePrompt(transcript, videoDuration, keywords);
+    }
 
     // Try to generate content with AI providers
     let text: string;
@@ -170,11 +177,16 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Parse the structured response from AI
-    const parsedResponse = type === "linkedin" 
-      ? parseLinkedinResponse(text!)
-      : type === "twitter"
-      ? parseTwitterResponse(text!)
-      : parseYoutubeResponse(text!);
+    let parsedResponse: Partial<GenerateResponse>;
+    if (type === "linkedin") {
+      parsedResponse = parseLinkedinResponse(text!);
+    } else if (type === "twitter") {
+      parsedResponse = parseTwitterResponse(text!);
+    } else if (type === "keywords") {
+      parsedResponse = parseKeywordsResponse(text!);
+    } else {
+      parsedResponse = parseYoutubeResponse(text!);
+    }
 
     // Add metadata to response
     const responseData: GenerateResponse = {
@@ -217,11 +229,15 @@ Transkript:
 ${transcript}`;
 }
 
-function createYoutubePrompt(transcript: string, videoDuration?: string): string {
+function createYoutubePrompt(transcript: string, videoDuration?: string, keywords?: string[]): string {
   const base = createPromptBase(transcript);
+  const keywordsPrompt = keywords && keywords.length > 0 
+    ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(', ')}`
+    : '';
+  
   return `Du bist ein YouTube-Content-Optimierungsassistent für Entwickler-Content. Wichtiger Hinweis: Es handelt sich um YouTube SHORTS, NICHT um lange Videos.
 
-${base}
+${base}${keywordsPrompt}
 
 Deine Aufgabe ist es:
 1. Eine 100% identische Version des Transkripts zu erstellen mit AUSSCHLIESSLICH korrigierter Interpunktion (Kommas, Punkte) und korrekter Schreibweise der Marken und Begriffe im Brandnames-Hinweis. EINZIGE AUSNAHME: Die im Brandnames-Hinweis genannten Marken und Begriffe müssen in der korrekten Schreibweise angegeben werden. Ansonsten ABSOLUT KEINE Änderungen an anderen Wörtern oder Wortreihenfolge! KEINE weiteren Rechtschreibkorrekturen, KEINE Änderungen am Satzbau. NUR Kommata und Punkte hinzufügen/korrigieren wo nötig plus korrekte Marken-Schreibweise!
@@ -234,12 +250,14 @@ Für den Titel:
 - Nutze Formulierungen wie "Meine Meinung zu...", "Warum ich denke, dass...", "3 Gründe warum..."
 - Hohe Lesbarkeit steht an erster Stelle! Verwende KEINE Sonderzeichen wie (), &, #, ! oder ähnliches
 - Setze auf präzise Fachbegriffe statt übertriebene Adjektive (sofern im Transkript vorhanden)
+- WICHTIG: Verwende die Priorität-Keywords prominent im Titel, besonders am Anfang
 - Idealerweise 60-70 Zeichen (nicht zu kurz!)
 
 Für die Beschreibung:
 - WICHTIG: Die Zielgruppe sind Entwickler und die Developer-Community! Verwende eine technikaffine Sprache! ABER: Der Inhalt MUSS sich strikt auf das Transkript beziehen!
 - TOTAL WICHTIG: Jeder Absatz soll etwa 500 Zeichen lang sein! Die gesamte Beschreibung soll ca. 1500 Zeichen umfassen.
 - Die Beschreibung MUSS sehr detailliert und umfangreich sein mit vielen Informationen und Kontext, ABER **AUSSCHLIESSLICH BASIEREND AUF DEM TRANSKRIPTINHALT!** Erfinde nichts!
+- WICHTIG: Integriere die Priorität-Keywords natürlich und prominent in die Beschreibung
 - Absatz 1: Stelle eine These oder kontroverse Meinung auf, die sich aus dem Transkript ergibt (8-10 Sätze) - WICHTIG: Der ERSTE SATZ muss mit dem Hauptkeyword beginnen und direkt eine Meinung oder These präsentieren!
 - Absatz 2: Führe Argumente und Gegenpositionen aus **die im Short (Transkript) erwähnt werden** (8-10 Sätze) - Formuliere Fragen wie "Was denkt ihr zu..." oder "Habt ihr ähnliche Erfahrungen mit..."
 - Absatz 3: Fordere die Community zur Diskussion auf (8-10 Sätze) - Stelle konkrete Fragen, lade zu Gegenargumenten ein, frage nach eigenen Erfahrungen!
@@ -277,11 +295,15 @@ TIMESTAMPS:
 [5 SEO-optimierte Zeitstempel mit Topics, gleichmäßig über ${videoDuration} verteilt]` : ''}`;
 }
 
-function createLinkedinPrompt(transcript: string): string {
+function createLinkedinPrompt(transcript: string, keywords?: string[]): string {
   const base = createPromptBase(transcript);
+  const keywordsPrompt = keywords && keywords.length > 0 
+    ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(', ')}`
+    : '';
+  
   return `Du bist ein LinkedIn-Content-Optimierungsassistent. Ich stelle dir ein Transkript zur Verfügung, das ich in einen überzeugenden LinkedIn-Post umwandeln möchte.
 
-${base}
+${base}${keywordsPrompt}
 
 Deine Aufgabe ist es, einen professionellen und ansprechenden LinkedIn-Post auf Deutsch zu erstellen, der folgende Spezifikationen erfüllt:
 
@@ -289,6 +311,7 @@ Deine Aufgabe ist es, einen professionellen und ansprechenden LinkedIn-Post auf 
 - Thema: Informativ herausstellen
 - Tone of Voice: Soll klar machen, dass ich viel Spaß an den Themen habe und diese direkt helfen; ich bringe das gerne in Demos und Remote Workshops in Teams
 - Anrede: "Demo" nur erwähnen, wenn es um Barrierefreies Webdesign oder Refactoring geht
+- WICHTIG: Integriere die Priorität-Keywords natürlich und prominent in den Post
 - Abschluss: Eine sehr gute und motivierende Frage stellen, die dazu einlädt zu antworten und Leser als Experten wertschätzt
 
 Kontext-spezifische Beispiele:
@@ -349,6 +372,36 @@ TWITTER POST:
 [Der komplette Twitter-Post auf Deutsch, maximal 280 Zeichen mit Hashtags]`;
 }
 
+||||||| parent of e47548b (Add AI-powered keyword detection with SEO integration)
+=======
+function createKeywordsPrompt(transcript: string): string {
+  return `Du bist ein AI-Assistent für SEO-Keyword-Extraktion. Analysiere das folgende Transkript und extrahiere die 3 wichtigsten Keywords für YouTube-Tags.
+
+${BRAND_NAMES_PROMPT}
+
+Transkript:
+${transcript}
+
+WICHTIG: Analysiere NUR den gegebenen Text. Verwende KEINE vordefinierten Listen oder Beispiele.
+
+Identifiziere die wichtigsten Begriffe, die:
+- Tatsächlich im Transkript vorkommen
+- Das Hauptthema repräsentieren
+- Als YouTube-Tags relevant wären
+- Spezifisch genug sind (keine allgemeinen Wörter wie "gut", "machen", "project")
+- Bevorzuge Markennamen und spezifische Technologien (z.B. "Claude 4", "Astro Framework")
+
+Extrahiere die 3 relevantesten Keywords direkt aus dem Transkript-Inhalt.
+
+Gib die Keywords in folgendem Format zurück:
+
+KEYWORDS:
+keyword1
+keyword2
+keyword3`;
+}
+
+>>>>>>> e47548b (Add AI-powered keyword detection with SEO integration)
 function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
   // Default values in case parsing fails
   const result: Partial<GenerateResponse> = {
@@ -409,6 +462,27 @@ function parseTwitterResponse(text: string): Partial<GenerateResponse> {
   const twitterMatch = text.match(/TWITTER POST:\s*([\s\S]*?)(?=$)/);
   if (twitterMatch?.[1]) {
     result.twitterPost = twitterMatch[1].trim();
+  }
+
+  return result;
+}
+
+function parseKeywordsResponse(text: string): Partial<GenerateResponse> {
+  const result: Partial<GenerateResponse> = {
+    keywords: [],
+  };
+
+  // Extract keywords
+  const keywordsMatch = text.match(/KEYWORDS:\s*([\s\S]*?)(?=$)/);
+  if (keywordsMatch?.[1]) {
+    const keywordsText = keywordsMatch[1].trim();
+    const keywords = keywordsText
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .slice(0, 3); // Ensure max 3 keywords
+    
+    result.keywords = keywords;
   }
 
   return result;

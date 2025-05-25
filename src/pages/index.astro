@@ -55,6 +55,29 @@ import Layout from '../layouts/Layout.astro';
                         </p>
                     </div>
 
+                    <!-- Keywords Section -->
+                    <div id="keywords-section" class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-gray-700">Keywords (Tags)</label>
+                            <button type="button" id="detect-keywords-btn" class="text-sm text-indigo-600 hover:text-indigo-800 focus:outline-none">
+                                Automatisch erkennen
+                            </button>
+                        </div>
+                        
+                        <!-- Keywords Container -->
+                        <div id="keywords-container" class="min-h-[3rem] p-3 border border-gray-300 rounded-md focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+                            <div id="keywords-list" class="flex flex-wrap gap-2 mb-2"></div>
+                            <input 
+                                type="text" 
+                                id="keyword-input" 
+                                placeholder="Keyword hinzufügen und Enter drücken..."
+                                class="w-full border-0 outline-none text-sm placeholder-gray-400 focus:ring-0"
+                            >
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            <span id="keyword-count">0</span>/3 Keywords
+                        </div>
+                    </div>
                     <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         YouTube Content generieren
                     </button>
@@ -226,8 +249,111 @@ import Layout from '../layouts/Layout.astro';
         const copyLinkedinBtn = document.getElementById('copy-linkedin-btn');
         const copyTwitterBtn = document.getElementById('copy-twitter-btn');
 
+        // Keywords elements
+        const detectKeywordsBtn = document.getElementById('detect-keywords-btn');
+        const keywordsList = document.getElementById('keywords-list');
+        const keywordInput = document.getElementById('keyword-input');
+        const keywordCount = document.getElementById('keyword-count');
+        
+        // Keywords state
+        let keywords = [];
+        const MAX_KEYWORDS = 3;
+
         // Initialize toggle button appearance
         toggleSharingAppearance(isTranscriptShared);
+
+        // Keywords functionality - removed hardcoded detection, using AI instead
+
+        function renderKeywords() {
+            keywordsList.innerHTML = '';
+            keywords.forEach((keyword, index) => {
+                const tag = document.createElement('span');
+                tag.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800';
+                tag.innerHTML = `
+                    ${keyword}
+                    <button type="button" class="ml-2 text-indigo-600 hover:text-indigo-800 focus:outline-none" onclick="removeKeyword(${index})">
+                        ×
+                    </button>
+                `;
+                keywordsList.appendChild(tag);
+            });
+            updateKeywordCount();
+        }
+
+        function updateKeywordCount() {
+            keywordCount.textContent = keywords.length;
+        }
+
+        function addKeyword(keyword) {
+            const trimmed = keyword.trim().toLowerCase();
+            if (trimmed && !keywords.includes(trimmed) && keywords.length < MAX_KEYWORDS) {
+                keywords.push(trimmed);
+                renderKeywords();
+                return true;
+            }
+            return false;
+        }
+
+        window.removeKeyword = function(index) {
+            keywords.splice(index, 1);
+            renderKeywords();
+        };
+
+        // Keyword input handling
+        keywordInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const keyword = keywordInput.value;
+                if (addKeyword(keyword)) {
+                    keywordInput.value = '';
+                }
+            }
+        });
+
+        // Auto-detect keywords with AI
+        detectKeywordsBtn.addEventListener('click', async () => {
+            const transcript = sharedTranscript.value;
+            if (!transcript || transcript.trim().length < 50) {
+                errorDiv.classList.remove('hidden');
+                errorMessage.textContent = 'Bitte gib ein gültiges Transkript ein (mindestens 50 Zeichen).';
+                return;
+            }
+
+            detectKeywordsBtn.textContent = 'Erkennt...';
+            detectKeywordsBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        transcript: transcript,
+                        type: 'keywords'
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                if (data.keywords && Array.isArray(data.keywords)) {
+                    keywords = data.keywords.slice(0, 3);
+                    renderKeywords();
+                    errorDiv.classList.add('hidden');
+                }
+
+            } catch (error) {
+                errorDiv.classList.remove('hidden');
+                errorMessage.textContent = 'Fehler beim Erkennen der Keywords: ' + error.message;
+                console.error('Keyword detection error:', error);
+            } finally {
+                detectKeywordsBtn.textContent = 'Automatisch erkennen';
+                detectKeywordsBtn.disabled = false;
+            }
+        });
 
         // Toggle sharing functionality
         shareToggle.addEventListener('click', () => {
@@ -333,7 +459,8 @@ import Layout from '../layouts/Layout.astro';
             const formData = new FormData(ytForm);
             const requestData = {
                 ...Object.fromEntries(formData.entries()),
-                type: 'youtube'
+                type: 'youtube',
+                keywords: keywords.length > 0 ? keywords : undefined
             };
 
             // Validate video duration format if provided
@@ -429,7 +556,8 @@ import Layout from '../layouts/Layout.astro';
             const formData = new FormData(liForm);
             const requestData = {
                 ...Object.fromEntries(formData.entries()),
-                type: 'linkedin'
+                type: 'linkedin',
+                keywords: keywords.length > 0 ? keywords : undefined
             };
 
             if (!requestData.transcript || requestData.transcript.trim().length < 50) {
