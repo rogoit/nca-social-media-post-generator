@@ -372,8 +372,6 @@ TWITTER POST:
 [Der komplette Twitter-Post auf Deutsch, maximal 280 Zeichen mit Hashtags]`;
 }
 
-||||||| parent of e47548b (Add AI-powered keyword detection with SEO integration)
-=======
 function createKeywordsPrompt(transcript: string): string {
   return `Du bist ein AI-Assistent für SEO-Keyword-Extraktion. Analysiere das folgende Transkript und extrahiere die 3 wichtigsten Keywords für YouTube-Tags.
 
@@ -400,8 +398,6 @@ keyword1
 keyword2
 keyword3`;
 }
-
->>>>>>> e47548b (Add AI-powered keyword detection with SEO integration)
 function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
   // Default values in case parsing fails
   const result: Partial<GenerateResponse> = {
