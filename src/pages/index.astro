@@ -62,6 +62,7 @@ import Layout from '../layouts/Layout.astro';
                     <button id="linkedin-tab" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-600 rounded-t-md">LinkedIn</button>
                     <button id="twitter-tab" class="px-6 py-2 font-medium text-gray-500 hover:text-black rounded-t-md">Twitter</button>
                     <button id="instagram-tab" class="px-6 py-2 font-medium text-gray-500 hover:text-pink-600 rounded-t-md">Instagram</button>
+                    <button id="tiktok-tab" class="px-6 py-2 font-medium text-gray-500 hover:text-black rounded-t-md">TikTok</button>
                 </div>
 
                 <!-- YouTube Form -->
@@ -134,6 +135,19 @@ import Layout from '../layouts/Layout.astro';
                         </button>
                     </form>
                 </div>
+
+                <!-- TikTok Form -->
+                <div id="tiktok-content" class="hidden">
+                    <form id="tt-form" class="space-y-6">
+                        <div class="hidden">
+                            <textarea id="tt-transcript" name="transcript" class="hidden"></textarea>
+                        </div>
+
+                        <button type="submit" id="tiktok-generate-btn" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            TikTok Post generieren
+                        </button>
+                    </form>
+                </div>
             </div>
             
             <!-- Loading Spinner -->
@@ -142,6 +156,7 @@ import Layout from '../layouts/Layout.astro';
                 <div id="linkedin-spinner" class="hidden inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
                 <div id="twitter-spinner" class="hidden inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
                 <div id="instagram-spinner" class="hidden inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-pink-500"></div>
+                <div id="tiktok-spinner" class="hidden inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
                 <p class="mt-2 text-gray-600">Transkript wird analysiert und Content generiert...</p>
             </div>
             
@@ -231,6 +246,21 @@ import Layout from '../layouts/Layout.astro';
                 </div>
             </div>
             
+            <!-- TikTok Results -->
+            <div id="tt-result" class="hidden mt-6 space-y-6">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900 mb-2">TikTok Post</h2>
+                    <div id="tiktok-content-result" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
+                <div id="tt-model-used" class="mt-1 text-xs text-indigo-600">Modell: <span id="tt-model-name"></span></div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button id="copy-tiktok-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+                        TikTok Post kopieren
+                    </button>
+                </div>
+            </div>
+            
             <!-- Error Message -->
             <div id="error" class="hidden mt-6 p-4 bg-red-50 text-red-700 rounded-md border border-red-200">
                 <p id="error-message"></p>
@@ -246,26 +276,31 @@ import Layout from '../layouts/Layout.astro';
         const linkedinTab = document.getElementById('linkedin-tab');
         const twitterTab = document.getElementById('twitter-tab');
         const instagramTab = document.getElementById('instagram-tab');
+        const tiktokTab = document.getElementById('tiktok-tab');
         const youtubeContent = document.getElementById('youtube-content');
         const linkedinContent = document.getElementById('linkedin-content');
         const twitterContent = document.getElementById('twitter-content');
         const instagramContent = document.getElementById('instagram-content');
+        const tiktokContent = document.getElementById('tiktok-content');
         const youtubeSpinner = document.getElementById('youtube-spinner');
         const linkedinSpinner = document.getElementById('linkedin-spinner');
         const twitterSpinner = document.getElementById('twitter-spinner');
         const instagramSpinner = document.getElementById('instagram-spinner');
+        const tiktokSpinner = document.getElementById('tiktok-spinner');
 
         // Forms
         const ytForm = document.getElementById('yt-form');
         const liForm = document.getElementById('li-form');
         const twForm = document.getElementById('tw-form');
         const igForm = document.getElementById('ig-form');
+        const ttForm = document.getElementById('tt-form');
         
         // Generate buttons
         const youtubeGenerateBtn = document.getElementById('youtube-generate-btn');
         const linkedinGenerateBtn = document.getElementById('linkedin-generate-btn');
         const twitterGenerateBtn = document.getElementById('twitter-generate-btn');
         const instagramGenerateBtn = document.getElementById('instagram-generate-btn');
+        const tiktokGenerateBtn = document.getElementById('tiktok-generate-btn');
         
         // Step elements
         const stepKeywords = document.getElementById('step-keywords');
@@ -279,6 +314,7 @@ import Layout from '../layouts/Layout.astro';
         const liTranscript = document.getElementById('li-transcript');
         const twTranscript = document.getElementById('tw-transcript');
         const igTranscript = document.getElementById('ig-transcript');
+        const ttTranscript = document.getElementById('tt-transcript');
         
         // Flow state
         let transcriptProcessed = false;
@@ -291,6 +327,7 @@ import Layout from '../layouts/Layout.astro';
         const liResult = document.getElementById('li-result');
         const twResult = document.getElementById('tw-result');
         const igResult = document.getElementById('ig-result');
+        const ttResult = document.getElementById('tt-result');
         const transcriptContent = document.getElementById('transcript-content');
         const titleContent = document.getElementById('title-content');
         const descriptionContent = document.getElementById('description-content');
@@ -299,6 +336,7 @@ import Layout from '../layouts/Layout.astro';
         const linkedinContentResult = document.getElementById('linkedin-content-result');
         const twitterContentResult = document.getElementById('twitter-content-result');
         const instagramContentResult = document.getElementById('instagram-content-result');
+        const tiktokContentResult = document.getElementById('tiktok-content-result');
 
         // Error
         const errorDiv = document.getElementById('error');
@@ -312,6 +350,7 @@ import Layout from '../layouts/Layout.astro';
         const copyLinkedinBtn = document.getElementById('copy-linkedin-btn');
         const copyTwitterBtn = document.getElementById('copy-twitter-btn');
         const copyInstagramBtn = document.getElementById('copy-instagram-btn');
+        const copyTiktokBtn = document.getElementById('copy-tiktok-btn');
 
         // Keywords elements
         const detectKeywordsBtn = document.getElementById('detect-keywords-btn');
@@ -486,11 +525,14 @@ import Layout from '../layouts/Layout.astro';
             twitterTab.classList.add('text-gray-500');
             instagramTab.classList.remove('border-b-2', 'border-pink-600', 'text-pink-600');
             instagramTab.classList.add('text-gray-500');
+            tiktokTab.classList.remove('border-b-2', 'border-black', 'text-black');
+            tiktokTab.classList.add('text-gray-500');
 
             youtubeContent.classList.remove('hidden');
             linkedinContent.classList.add('hidden');
             twitterContent.classList.add('hidden');
             instagramContent.classList.add('hidden');
+            tiktokContent.classList.add('hidden');
 
             // Show YouTube results if they exist
             if (titleContent.textContent || descriptionContent.textContent) {
@@ -503,6 +545,7 @@ import Layout from '../layouts/Layout.astro';
             liResult.classList.add('hidden');
             twResult.classList.add('hidden');
             igResult.classList.add('hidden');
+            ttResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
         });
 
@@ -514,11 +557,14 @@ import Layout from '../layouts/Layout.astro';
             twitterTab.classList.add('text-gray-500');
             instagramTab.classList.remove('border-b-2', 'border-pink-600', 'text-pink-600');
             instagramTab.classList.add('text-gray-500');
+            tiktokTab.classList.remove('border-b-2', 'border-black', 'text-black');
+            tiktokTab.classList.add('text-gray-500');
 
             linkedinContent.classList.remove('hidden');
             youtubeContent.classList.add('hidden');
             twitterContent.classList.add('hidden');
             instagramContent.classList.add('hidden');
+            tiktokContent.classList.add('hidden');
 
             // Show LinkedIn results if they exist
             if (linkedinContentResult.textContent) {
@@ -531,6 +577,7 @@ import Layout from '../layouts/Layout.astro';
             ytResult.classList.add('hidden');
             twResult.classList.add('hidden');
             igResult.classList.add('hidden');
+            ttResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
         });
 
@@ -542,11 +589,14 @@ import Layout from '../layouts/Layout.astro';
             linkedinTab.classList.add('text-gray-500');
             instagramTab.classList.remove('border-b-2', 'border-pink-600', 'text-pink-600');
             instagramTab.classList.add('text-gray-500');
+            tiktokTab.classList.remove('border-b-2', 'border-black', 'text-black');
+            tiktokTab.classList.add('text-gray-500');
 
             twitterContent.classList.remove('hidden');
             youtubeContent.classList.add('hidden');
             linkedinContent.classList.add('hidden');
             instagramContent.classList.add('hidden');
+            tiktokContent.classList.add('hidden');
 
             // Show Twitter results if they exist
             if (twitterContentResult.textContent) {
@@ -559,6 +609,7 @@ import Layout from '../layouts/Layout.astro';
             ytResult.classList.add('hidden');
             liResult.classList.add('hidden');
             igResult.classList.add('hidden');
+            ttResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
         });
 
@@ -570,11 +621,14 @@ import Layout from '../layouts/Layout.astro';
             linkedinTab.classList.add('text-gray-500');
             twitterTab.classList.remove('border-b-2', 'border-black', 'text-black');
             twitterTab.classList.add('text-gray-500');
+            tiktokTab.classList.remove('border-b-2', 'border-black', 'text-black');
+            tiktokTab.classList.add('text-gray-500');
 
             instagramContent.classList.remove('hidden');
             youtubeContent.classList.add('hidden');
             linkedinContent.classList.add('hidden');
             twitterContent.classList.add('hidden');
+            tiktokContent.classList.add('hidden');
 
             // Show Instagram results if they exist
             if (instagramContentResult.textContent) {
@@ -587,6 +641,39 @@ import Layout from '../layouts/Layout.astro';
             ytResult.classList.add('hidden');
             liResult.classList.add('hidden');
             twResult.classList.add('hidden');
+            ttResult.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+        });
+
+        tiktokTab.addEventListener('click', () => {
+            tiktokTab.classList.add('border-b-2', 'border-black', 'text-black');
+            youtubeTab.classList.remove('border-b-2', 'border-red-600', 'text-red-600');
+            youtubeTab.classList.add('text-gray-500');
+            linkedinTab.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+            linkedinTab.classList.add('text-gray-500');
+            twitterTab.classList.remove('border-b-2', 'border-black', 'text-black');
+            twitterTab.classList.add('text-gray-500');
+            instagramTab.classList.remove('border-b-2', 'border-pink-600', 'text-pink-600');
+            instagramTab.classList.add('text-gray-500');
+
+            tiktokContent.classList.remove('hidden');
+            youtubeContent.classList.add('hidden');
+            linkedinContent.classList.add('hidden');
+            twitterContent.classList.add('hidden');
+            instagramContent.classList.add('hidden');
+
+            // Show TikTok results if they exist
+            if (tiktokContentResult.textContent) {
+                ttResult.classList.remove('hidden');
+            } else {
+                ttResult.classList.add('hidden');
+            }
+
+            // Hide other results
+            ytResult.classList.add('hidden');
+            liResult.classList.add('hidden');
+            twResult.classList.add('hidden');
+            igResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
         });
 
@@ -628,10 +715,12 @@ import Layout from '../layouts/Layout.astro';
             linkedinSpinner.classList.add('hidden');
             twitterSpinner.classList.add('hidden');
             instagramSpinner.classList.add('hidden');
+            tiktokSpinner.classList.add('hidden');
             ytResult.classList.add('hidden');
             liResult.classList.add('hidden');
             twResult.classList.add('hidden');
             igResult.classList.add('hidden');
+            ttResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
 
             try {
@@ -716,10 +805,12 @@ import Layout from '../layouts/Layout.astro';
             linkedinSpinner.classList.remove('hidden');
             twitterSpinner.classList.add('hidden');
             instagramSpinner.classList.add('hidden');
+            tiktokSpinner.classList.add('hidden');
             ytResult.classList.add('hidden');
             liResult.classList.add('hidden');
             twResult.classList.add('hidden');
             igResult.classList.add('hidden');
+            ttResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
 
             try {
@@ -785,10 +876,12 @@ import Layout from '../layouts/Layout.astro';
             linkedinSpinner.classList.add('hidden');
             twitterSpinner.classList.remove('hidden');
             instagramSpinner.classList.add('hidden');
+            tiktokSpinner.classList.add('hidden');
             ytResult.classList.add('hidden');
             liResult.classList.add('hidden');
             twResult.classList.add('hidden');
             igResult.classList.add('hidden');
+            ttResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
 
             try {
@@ -854,10 +947,12 @@ import Layout from '../layouts/Layout.astro';
             linkedinSpinner.classList.add('hidden');
             twitterSpinner.classList.add('hidden');
             instagramSpinner.classList.remove('hidden');
+            tiktokSpinner.classList.add('hidden');
             ytResult.classList.add('hidden');
             liResult.classList.add('hidden');
             twResult.classList.add('hidden');
             igResult.classList.add('hidden');
+            ttResult.classList.add('hidden');
             errorDiv.classList.add('hidden');
 
             try {
@@ -896,6 +991,78 @@ import Layout from '../layouts/Layout.astro';
                 console.error('Fehler:', error);
             }
         });
+
+        // TikTok form submission
+        ttForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get the transcript from the shared input
+            const transcriptText = sharedTranscript.value;
+            ttTranscript.value = transcriptText; // Set the form's hidden textarea value
+
+            const formData = new FormData(ttForm);
+            const requestData = {
+                ...Object.fromEntries(formData.entries()),
+                type: 'tiktok',
+                keywords: keywords.length > 0 ? keywords : undefined
+            };
+
+            if (!requestData.transcript || requestData.transcript.trim().length < 50) {
+                errorDiv.classList.remove('hidden');
+                errorMessage.textContent = 'Bitte gib ein gültiges Transkript ein (mindestens 50 Zeichen).';
+                return;
+            }
+
+            // Show loading state
+            loading.classList.remove('hidden');
+            youtubeSpinner.classList.add('hidden');
+            linkedinSpinner.classList.add('hidden');
+            twitterSpinner.classList.add('hidden');
+            instagramSpinner.classList.add('hidden');
+            tiktokSpinner.classList.remove('hidden');
+            ytResult.classList.add('hidden');
+            liResult.classList.add('hidden');
+            twResult.classList.add('hidden');
+            igResult.classList.add('hidden');
+            ttResult.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                // Hide loading, show result
+                loading.classList.add('hidden');
+                ttResult.classList.remove('hidden');
+
+                // Display the generated content
+                tiktokContentResult.textContent = data.tiktokPost;
+
+                // Display which AI model was used
+                const ttModelName = document.getElementById('tt-model-name');
+                if (data.modelUsed && ttModelName) {
+                    ttModelName.textContent = data.modelUsed;
+                }
+
+            } catch (error) {
+                // Hide loading, show error
+                loading.classList.add('hidden');
+                errorDiv.classList.remove('hidden');
+                errorMessage.textContent = error.message || 'Ein Fehler ist beim Generieren des Inhalts aufgetreten.';
+                console.error('Fehler:', error);
+            }
+        });
         
         // Copy to clipboard functionality
         copyTranscriptBtn.addEventListener('click', () => copyToClipboard(transcriptContent, copyTranscriptBtn));
@@ -905,6 +1072,7 @@ import Layout from '../layouts/Layout.astro';
         copyLinkedinBtn.addEventListener('click', () => copyToClipboard(linkedinContentResult, copyLinkedinBtn));
         copyTwitterBtn.addEventListener('click', () => copyToClipboard(twitterContentResult, copyTwitterBtn));
         copyInstagramBtn.addEventListener('click', () => copyToClipboard(instagramContentResult, copyInstagramBtn));
+        copyTiktokBtn.addEventListener('click', () => copyToClipboard(tiktokContentResult, copyTiktokBtn));
         
         function copyToClipboard(contentElement, buttonElement) {
             const content = contentElement.textContent;

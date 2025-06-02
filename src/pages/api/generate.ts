@@ -5,7 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 // Type definitions
 interface GenerateRequest {
   transcript: string;
-  type?: "youtube" | "linkedin" | "twitter" | "instagram" | "keywords";
+  type?: "youtube" | "linkedin" | "twitter" | "instagram" | "tiktok" | "keywords";
   videoDuration?: string;
   keywords?: string[];
 }
@@ -18,6 +18,7 @@ interface GenerateResponse {
   linkedinPost?: string;
   twitterPost?: string;
   instagramPost?: string;
+  tiktokPost?: string;
   keywords?: string[];
   transcriptCleaned: boolean;
   modelUsed: string;
@@ -71,10 +72,10 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Validate type
-    if (type !== "youtube" && type !== "linkedin" && type !== "twitter" && type !== "instagram" && type !== "keywords") {
+    if (type !== "youtube" && type !== "linkedin" && type !== "twitter" && type !== "instagram" && type !== "tiktok" && type !== "keywords") {
       return new Response(
         JSON.stringify({
-          error: "Ungültiger Typ. Erlaubt sind: youtube, linkedin, twitter, instagram, keywords",
+          error: "Ungültiger Typ. Erlaubt sind: youtube, linkedin, twitter, instagram, tiktok, keywords",
         }),
         {
           status: 400,
@@ -102,6 +103,8 @@ export const POST: APIRoute = async ({ request }) => {
       prompt = createTwitterPrompt(transcript);
     } else if (type === "instagram") {
       prompt = createInstagramPrompt(transcript);
+    } else if (type === "tiktok") {
+      prompt = createTiktokPrompt(transcript, keywords);
     } else if (type === "keywords") {
       prompt = createKeywordsPrompt(transcript);
     } else {
@@ -187,6 +190,8 @@ export const POST: APIRoute = async ({ request }) => {
       parsedResponse = parseTwitterResponse(text!);
     } else if (type === "instagram") {
       parsedResponse = parseInstagramResponse(text!);
+    } else if (type === "tiktok") {
+      parsedResponse = parseTiktokResponse(text!);
     } else if (type === "keywords") {
       parsedResponse = parseKeywordsResponse(text!);
     } else {
@@ -418,6 +423,57 @@ INSTAGRAM POST:
 [Der komplette Instagram-Post auf Deutsch mit Absätzen und genau 10 Hashtags]`;
 }
 
+function createTiktokPrompt(transcript: string, keywords?: string[]): string {
+  const base = createPromptBase(transcript);
+  const keywordsPrompt = keywords && keywords.length > 0 
+    ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(', ')}`
+    : '';
+  
+  return `Du bist ein TikTok-Content-Optimierungsassistent für Developer-Content. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden TikTok-Post umwandeln möchte.
+
+${base}${keywordsPrompt}
+
+Deine Aufgabe ist es, einen optimierten TikTok-Post auf Deutsch zu erstellen, der folgende Spezifikationen erfüllt:
+
+- Zielgruppe: Developer-Community und Tech-Enthusiasten auf TikTok (oft jüngere Zielgruppe)
+- Tone of Voice: Direkt, trendy, lehrreich aber unterhaltsam
+- Zeichenlimit: Optimal 150-300 Zeichen für maximale Engagement (maximal 2200 Zeichen verfügbar)
+- Stil: Hook-basiert, problemlösungsorientiert, visuell beschreibend
+
+Inhaltliche Anforderungen:
+- WICHTIGSTER PUNKT: Starte mit einem starken Hook in den ersten 10-15 Wörtern
+- Nutze Formulierungen wie "POV:", "Nobody:", "When you...", aber auf Deutsch adaptiert
+- Stelle ein Problem vor und zeige die Lösung
+- Verwende trendy TikTok-Formulierungen wie "Let me show you...", "Here's how...", aber auf Deutsch
+- Integriere die Priorität-Keywords natürlich und prominent
+- Nutze kurze, prägnante Sätze und Absätze für bessere Lesbarkeit
+- Fordere zur Interaktion auf ("Speichern für später!", "Folge für mehr Tipps!")
+
+Kontext-spezifische Beispiele:
+- Bei AI-Themen: Erwähne relevante AI-Tools wie ChatGPT, Gemini, Claude
+- Bei PHP-Themen: Erwähne PHP-spezifische Tools wie PHPUnit, PHPStan, RectorPHP
+- Bei JavaScript-Themen: Erwähne JS-Tools wie Node.js, TypeScript, Vitest
+- WICHTIG: Verwende NUR die Tools/Technologien, die inhaltlich zum Hauptthema passen
+
+SEO und Hashtag-Strategie:
+- TikTok wird zunehmend als Suchmaschine genutzt - optimiere für Suchbarkeit
+- Verwende 3-6 relevante Hashtags für optimale Reichweite
+- Mische populäre und nische Hashtags
+- Nutze sowohl englische als auch deutsche Tech-Hashtags
+- Beispiele: #programming #entwickler #coding #techtok #learnontiktok #techttips #webdev
+
+Formatierung:
+- Post sollte zwischen 150-300 Zeichen lang sein (ohne Hashtags)
+- KEINE Emojis verwenden - halte es professionell
+- Verwende Zeilenumbrüche für bessere Lesbarkeit
+- Hashtags am Ende des Posts
+
+Bitte formatiere deine Antwort wie folgt (benutze die englische Bezeichnung "TIKTOK POST", aber der Inhalt soll komplett auf Deutsch sein):
+
+TIKTOK POST:
+[Der komplette TikTok-Post auf Deutsch mit Zeilenumbrüchen und 3-6 Hashtags]`;
+}
+
 function createKeywordsPrompt(transcript: string): string {
   return `Du bist ein AI-Assistent für SEO-Keyword-Extraktion. Analysiere das folgende Transkript und extrahiere die 3 wichtigsten Keywords für YouTube-Tags.
 
@@ -519,6 +575,21 @@ function parseInstagramResponse(text: string): Partial<GenerateResponse> {
   const instagramMatch = text.match(/INSTAGRAM POST:\s*([\s\S]*?)(?=$)/);
   if (instagramMatch?.[1]) {
     result.instagramPost = instagramMatch[1].trim();
+  }
+
+  return result;
+}
+
+function parseTiktokResponse(text: string): Partial<GenerateResponse> {
+  // Default values in case parsing fails
+  const result: Partial<GenerateResponse> = {
+    tiktokPost: "",
+  };
+
+  // Extract TikTok post
+  const tiktokMatch = text.match(/TIKTOK POST:\s*([\s\S]*?)(?=$)/);
+  if (tiktokMatch?.[1]) {
+    result.tiktokPost = tiktokMatch[1].trim();
   }
 
   return result;
