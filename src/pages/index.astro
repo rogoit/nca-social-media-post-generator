@@ -95,6 +95,22 @@ import Layout from '../layouts/Layout.astro';
                             YouTube Content generieren
                         </button>
                     </form>
+                    
+                    <!-- Copy buttons for YouTube -->
+                    <div id="yt-copy-buttons" class="hidden mt-3 flex justify-center space-x-2">
+                        <button id="copy-transcript-btn" class="py-1 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Transkript kopieren
+                        </button>
+                        <button id="copy-title-btn" class="py-1 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Titel kopieren
+                        </button>
+                        <button id="copy-description-btn" class="py-1 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Beschreibung kopieren
+                        </button>
+                        <button id="copy-timestamps-btn" class="py-1 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 hidden">
+                            Zeitstempel kopieren
+                        </button>
+                    </div>
                 </div>
 
                 <!-- LinkedIn Form -->
@@ -108,6 +124,13 @@ import Layout from '../layouts/Layout.astro';
                             LinkedIn Post generieren
                         </button>
                     </form>
+                    
+                    <!-- Copy button for LinkedIn -->
+                    <div id="li-copy-buttons" class="hidden mt-3 flex justify-center">
+                        <button id="copy-linkedin-btn" class="py-1 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            LinkedIn Post kopieren
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Twitter Form -->
@@ -121,6 +144,13 @@ import Layout from '../layouts/Layout.astro';
                             Twitter Post generieren
                         </button>
                     </form>
+                    
+                    <!-- Copy button for Twitter -->
+                    <div id="tw-copy-buttons" class="hidden mt-3 flex justify-center">
+                        <button id="copy-twitter-btn" class="py-1 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+                            Twitter Post kopieren
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Instagram Form -->
@@ -134,6 +164,13 @@ import Layout from '../layouts/Layout.astro';
                             Instagram Post generieren
                         </button>
                     </form>
+                    
+                    <!-- Copy button for Instagram -->
+                    <div id="ig-copy-buttons" class="hidden mt-3 flex justify-center">
+                        <button id="copy-instagram-btn" class="py-1 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500">
+                            Instagram Post kopieren
+                        </button>
+                    </div>
                 </div>
 
                 <!-- TikTok Form -->
@@ -147,6 +184,13 @@ import Layout from '../layouts/Layout.astro';
                             TikTok Post generieren
                         </button>
                     </form>
+                    
+                    <!-- Copy button for TikTok -->
+                    <div id="tt-copy-buttons" class="hidden mt-3 flex justify-center">
+                        <button id="copy-tiktok-btn" class="py-1 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+                            TikTok Post kopieren
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -184,21 +228,6 @@ import Layout from '../layouts/Layout.astro';
                     <h2 class="text-lg font-medium text-gray-900 mb-2">Zeitstempel</h2>
                     <div id="timestamps-content" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
                 </div>
-                
-                <div class="flex justify-end space-x-4">
-                    <button id="copy-transcript-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Transkript kopieren
-                    </button>
-                    <button id="copy-title-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Titel kopieren
-                    </button>
-                    <button id="copy-description-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Beschreibung kopieren
-                    </button>
-                    <button id="copy-timestamps-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 hidden">
-                        Zeitstempel kopieren
-                    </button>
-                </div>
             </div>
             
             <!-- LinkedIn Results -->
@@ -207,12 +236,6 @@ import Layout from '../layouts/Layout.astro';
                     <h2 class="text-lg font-medium text-gray-900 mb-2">LinkedIn Post</h2>
                     <div id="linkedin-content-result" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
                 <div id="li-model-used" class="mt-1 text-xs text-indigo-600">Modell: <span id="li-model-name"></span></div>
-                </div>
-                
-                <div class="flex justify-end">
-                    <button id="copy-linkedin-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        LinkedIn Post kopieren
-                    </button>
                 </div>
             </div>
             
@@ -223,12 +246,6 @@ import Layout from '../layouts/Layout.astro';
                     <div id="twitter-content-result" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
                 <div id="tw-model-used" class="mt-1 text-xs text-indigo-600">Modell: <span id="tw-model-name"></span></div>
                 </div>
-                
-                <div class="flex justify-end">
-                    <button id="copy-twitter-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
-                        Twitter Post kopieren
-                    </button>
-                </div>
             </div>
             
             <!-- Instagram Results -->
@@ -238,12 +255,6 @@ import Layout from '../layouts/Layout.astro';
                     <div id="instagram-content-result" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
                 <div id="ig-model-used" class="mt-1 text-xs text-indigo-600">Modell: <span id="ig-model-name"></span></div>
                 </div>
-                
-                <div class="flex justify-end">
-                    <button id="copy-instagram-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500">
-                        Instagram Post kopieren
-                    </button>
-                </div>
             </div>
             
             <!-- TikTok Results -->
@@ -252,12 +263,6 @@ import Layout from '../layouts/Layout.astro';
                     <h2 class="text-lg font-medium text-gray-900 mb-2">TikTok Post</h2>
                     <div id="tiktok-content-result" class="p-4 bg-gray-50 rounded-md border border-gray-200 whitespace-pre-line"></div>
                 <div id="tt-model-used" class="mt-1 text-xs text-indigo-600">Modell: <span id="tt-model-name"></span></div>
-                </div>
-                
-                <div class="flex justify-end">
-                    <button id="copy-tiktok-btn" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
-                        TikTok Post kopieren
-                    </button>
                 </div>
             </div>
             
@@ -757,6 +762,9 @@ import Layout from '../layouts/Layout.astro';
                     copyTimestampsBtn.classList.add('hidden');
                 }
 
+                // Show copy buttons
+                document.getElementById('yt-copy-buttons').classList.remove('hidden');
+
                 // Zeige Hinweis an, wenn das Transkript bereinigt wurde
                 const transcriptCleaned = document.getElementById('transcript-cleaned');
                 if (data.transcriptCleaned && transcriptCleaned) {
@@ -835,6 +843,9 @@ import Layout from '../layouts/Layout.astro';
                 // Display the generated content
                 linkedinContentResult.textContent = data.linkedinPost;
 
+                // Show copy buttons
+                document.getElementById('li-copy-buttons').classList.remove('hidden');
+
                 // Display which AI model was used
                 const liModelName = document.getElementById('li-model-name');
                 if (data.modelUsed && liModelName) {
@@ -905,6 +916,9 @@ import Layout from '../layouts/Layout.astro';
 
                 // Display the generated content
                 twitterContentResult.textContent = data.twitterPost;
+
+                // Show copy buttons
+                document.getElementById('tw-copy-buttons').classList.remove('hidden');
 
                 // Display which AI model was used
                 const twModelName = document.getElementById('tw-model-name');
@@ -977,6 +991,9 @@ import Layout from '../layouts/Layout.astro';
                 // Display the generated content
                 instagramContentResult.textContent = data.instagramPost;
 
+                // Show copy buttons
+                document.getElementById('ig-copy-buttons').classList.remove('hidden');
+
                 // Display which AI model was used
                 const igModelName = document.getElementById('ig-model-name');
                 if (data.modelUsed && igModelName) {
@@ -1048,6 +1065,9 @@ import Layout from '../layouts/Layout.astro';
 
                 // Display the generated content
                 tiktokContentResult.textContent = data.tiktokPost;
+
+                // Show copy buttons
+                document.getElementById('tt-copy-buttons').classList.remove('hidden');
 
                 // Display which AI model was used
                 const ttModelName = document.getElementById('tt-model-name');
