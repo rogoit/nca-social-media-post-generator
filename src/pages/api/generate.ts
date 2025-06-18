@@ -40,7 +40,7 @@ const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
 // Global prompt helpers for consistent content generation
 const BRAND_NAMES_PROMPT = "Achte auf die richtige Schreibweise dieser Marken und Begriffe: Never Code Alone (nicht nevercodealone, never code alone oder NeverCodeAlone), Roland Golla (nicht Roland Goler oder andere Varianten), roland@nevercodealone.de (nicht Roland@codealone.de oder andere Varianten), Pimcore (nicht PimCore oder pimcore), TYPO3 (nicht Typo3 oder typo3), CypressIO (nicht Cypress.io oder cypress), JavaScript (nicht Javascript oder javascript), ChatGPT (nicht Chat-GPT oder chatgpt), OpenAI (nicht Open AI oder openai), React (nicht ReactJS oder react), Node.js (nicht NodeJS oder nodejs), Vue.js (nicht VueJS oder vuejs), TypeScript (nicht Typescript oder typescript), PHP (nicht php, Php, prp oder PRP), PHPUnit (nicht PhpUnit oder phpunit), PHPStan (nicht Phpstan oder php-stan), RectorPHP (nicht Rector oder rector-php), Vitest (nicht vitest oder vi-test), Make.com (nicht Make, Make.io oder make.com), Claude 4 (nicht Claude4 oder claude 4), Claude 3.7 (nicht Claude37 oder claude 3.7), Vibe Coding (nicht vibe coding oder VibeCoding), GitHub (nicht Github oder github), Docker (nicht docker), Kubernetes (nicht kubernetes), AWS (nicht aws), PostgreSQL (nicht postgres oder postgresql), Astro (nicht astro), Anthropic (nicht anthropic), Google Gemini (nicht google gemini oder Gemini), VS Code (nicht vscode oder VSCode), Laravel (nicht laravel), Symfony (nicht symfony), Next.js (nicht NextJS oder nextjs), WordPress (nicht wordpress oder Wordpress).";
-const AVOID_EXAGGERATION_PROMPT = "KEINE übertriebenen Wörter wie \"ultimativ\", \"revolutionär\", \"unglaublich\" - halte es sachlich und präzise.";
+const AVOID_EXAGGERATION_PROMPT = "KEINE übertriebenen Wörter wie \"ultimativ\", \"revolutionär\", \"Revolution\", \"revolutionieren\", \"unglaublich\" - halte es sachlich und präzise.";
 const INFORMAL_ADDRESS_PROMPT = "Verwende eine informelle Anrede (\"ihr/euch/eure\" statt \"Sie/Ihnen\") und einen lockeren, direkten Ton.";
 
 // Available models for fallback
@@ -245,7 +245,7 @@ function createYoutubePrompt(transcript: string, videoDuration?: string, keyword
     ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(', ')}`
     : '';
   
-  return `Du bist ein YouTube-Content-Optimierungsassistent für Entwickler-Content. Wichtiger Hinweis: Es handelt sich um YouTube SHORTS, NICHT um lange Videos.
+  return `Du bist ein YouTube-Content-Optimierungsassistent für Entwickler-Content im Jahr 2025. Wichtiger Hinweis: Es handelt sich um YouTube SHORTS, NICHT um lange Videos.
 
 ${base}${keywordsPrompt}
 
@@ -323,7 +323,7 @@ function createLinkedinPrompt(transcript: string, keywords?: string[]): string {
     ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(', ')}`
     : '';
   
-  return `Du bist ein LinkedIn-Content-Optimierungsassistent. Ich stelle dir ein Transkript zur Verfügung, das ich in einen überzeugenden LinkedIn-Post umwandeln möchte.
+  return `Du bist ein LinkedIn-Content-Optimierungsassistent im Jahr 2025. Ich stelle dir ein Transkript zur Verfügung, das ich in einen überzeugenden LinkedIn-Post umwandeln möchte.
 
 ${base}${keywordsPrompt}
 
@@ -343,7 +343,7 @@ Kontext-spezifische Beispiele:
 - WICHTIG: Verwende NUR die Tools/Technologien, die inhaltlich zum Hauptthema passen - keine Vermischung!
 
 Nicht zu verwendende Wörter:
-- Revolution (und ähnliche übertriebene Begriffe)
+- Revolution, revolutionieren, revolutionär (und ähnliche übertriebene Begriffe)
 
 Formatierung:
 - LinkedIn-Post sollte zwischen 1000-1500 Zeichen lang sein
@@ -359,7 +359,7 @@ LINKEDIN POST:
 
 function createTwitterPrompt(transcript: string): string {
   const base = createPromptBase(transcript);
-  return `Du bist ein Twitter-Content-Optimierungsassistent für Entwickler-Content. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden Twitter-Post umwandeln möchte.
+  return `Du bist ein Twitter-Content-Optimierungsassistent für Entwickler-Content im Jahr 2025. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden Twitter-Post umwandeln möchte.
 
 ${base}
 
@@ -396,7 +396,7 @@ TWITTER POST:
 
 function createInstagramPrompt(transcript: string): string {
   const base = createPromptBase(transcript);
-  return `Du bist ein Instagram-Content-Optimierungsassistent für Developer-Content. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden Instagram-Post umwandeln möchte.
+  return `Du bist ein Instagram-Content-Optimierungsassistent für Developer-Content im Jahr 2025. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden Instagram-Post umwandeln möchte.
 
 ${base}
 
@@ -441,7 +441,7 @@ function createTiktokPrompt(transcript: string, keywords?: string[]): string {
     ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(', ')}`
     : '';
   
-  return `Du bist ein TikTok-Content-Optimierungsassistent für Developer-Content. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden TikTok-Post umwandeln möchte.
+  return `Du bist ein TikTok-Content-Optimierungsassistent für Developer-Content im Jahr 2025. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden TikTok-Post umwandeln möchte.
 
 ${base}${keywordsPrompt}
 
