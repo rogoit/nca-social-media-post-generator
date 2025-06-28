@@ -258,21 +258,30 @@ Deine Aufgabe ist es:
 Für den Titel:
 - WICHTIGSTE REGEL: Keywords MÜSSEN am Anfang stehen für optimale Suchbarkeit
 - VERBOTEN: "Meine Meinung zu..." - diese Formulierung NIEMALS verwenden!
-- Wähle EINE der folgenden bewährten YouTube-Titel-Formeln basierend auf dem Transkriptinhalt:
-  * "[Hauptkeyword] 2025: Die überraschende Wahrheit"
-  * "5 [Hauptkeyword] Fehler die jeder macht"  
-  * "Warum [Hauptkeyword] besser ist als du denkst"
+- KRITISCH: Titel MUSS zum Video-Typ passen:
+  
+  FÜR KURZE VIDEOS (ohne Zeitangabe = Shorts/Fragen):
+  * "Ist [Hauptkeyword] die beste Lösung?"
+  * "[Hauptkeyword] oder [Alternative]: Was ist besser?"
+  * "Braucht man [Hauptkeyword] wirklich?"
+  * "[Hauptkeyword] 2025: Ja oder Nein?"
+  * "Warum [Hauptkeyword] nutzen?"
+  * "[Hauptkeyword]: Die wichtigste Frage"
+  
+  FÜR LANGE VIDEOS (mit Zeitangabe = Tutorials/Mehrwert):
   * "[Hauptkeyword] Tutorial: Das musst du wissen"
-  * "Der größte [Hauptkeyword] Mythos aufgedeckt"
-  * "[Hauptkeyword] in 2025: Das hat sich geändert"
-  * "So meisterst du [Hauptkeyword] in 3 Schritten"
+  * "[Hauptkeyword] erklärt: Der komplette Guide"
+  * "[Hauptkeyword] 2025: Alle wichtigen Features"
+  * "So funktioniert [Hauptkeyword] richtig"
+  * "[Hauptkeyword]: Von Anfänger zum Profi"
   * "[Keyword A] vs [Keyword B]: Der ehrliche Vergleich"
-  * "[Hauptkeyword]: Diese 3 Tricks musst du kennen"
-  * "Darum scheitern 90% bei [Hauptkeyword]"
-  * "[Hauptkeyword] erklärt in 60 Sekunden"
   * "Was niemand über [Hauptkeyword] sagt"
-- Verwende IMMER Zahlen wenn möglich (2025, Top 5, 3 Tricks, 90%, etc.)
-- KEINE Sonderzeichen wie (), &, #, ! - nur Buchstaben, Zahlen und Doppelpunkt
+  * "Der größte [Hauptkeyword] Mythos aufgedeckt"
+  
+- VERBOTEN bei Shorts: Zahlenangaben wie "3 Tipps", "5 Fehler" etc. (es werden nur Fragen gestellt!)
+- NUR bei langen Videos mit nachweisbarem Inhalt: Zahlen verwenden wenn tatsächlich vorhanden
+- ABSOLUT KEINE Sonderzeichen wie (), &, #, ! - nur Buchstaben, Zahlen und Doppelpunkt
+- WICHTIG: Statt "&" IMMER "und" oder "+" schreiben! Beispiel: "Startups und Investments" NICHT "Startups & Investments"
 - Ziel: 60-70 Zeichen für optimale YouTube-Anzeige
 
 Für die Beschreibung:
