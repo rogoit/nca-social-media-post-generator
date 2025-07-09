@@ -5,7 +5,13 @@ import Anthropic from "@anthropic-ai/sdk";
 // Type definitions
 interface GenerateRequest {
   transcript: string;
-  type?: "youtube" | "linkedin" | "twitter" | "instagram" | "tiktok" | "keywords";
+  type?:
+    | "youtube"
+    | "linkedin"
+    | "twitter"
+    | "instagram"
+    | "tiktok"
+    | "keywords";
   videoDuration?: string;
   keywords?: string[];
 }
@@ -32,32 +38,45 @@ interface AIError {
 }
 
 // Initialize AI providers
-const GOOGLE_GEMINI_API_KEY = import.meta.env.GOOGLE_GEMINI_API_KEY?.replace(/["']/g, '').trim();
-const ANTHROPIC_API_KEY = import.meta.env.ANTHROPIC_API_KEY?.replace(/["']/g, '').trim();
+const GOOGLE_GEMINI_API_KEY = import.meta.env.GOOGLE_GEMINI_API_KEY?.replace(
+  /["']/g,
+  ""
+).trim();
+const ANTHROPIC_API_KEY = import.meta.env.ANTHROPIC_API_KEY?.replace(
+  /["']/g,
+  ""
+).trim();
 
 const genAI = new GoogleGenerativeAI(GOOGLE_GEMINI_API_KEY);
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
 // Global prompt helpers for consistent content generation
-const BRAND_NAMES_PROMPT = "Achte auf die richtige Schreibweise dieser Marken und Begriffe: Never Code Alone (nicht nevercodealone, never code alone oder NeverCodeAlone), Roland Golla (nicht Roland Goler oder andere Varianten), roland@nevercodealone.de (nicht Roland@codealone.de oder andere Varianten), Pimcore (nicht PimCore oder pimcore), TYPO3 (nicht Typo3 oder typo3), CypressIO (nicht Cypress.io oder cypress), JavaScript (nicht Javascript oder javascript), ChatGPT (nicht Chat-GPT oder chatgpt), OpenAI (nicht Open AI oder openai), React (nicht ReactJS oder react), Node.js (nicht NodeJS oder nodejs), Vue.js (nicht VueJS oder vuejs), TypeScript (nicht Typescript oder typescript), PHP (nicht php, Php, prp oder PRP), PHPUnit (nicht PhpUnit oder phpunit), PHPStan (nicht Phpstan oder php-stan), RectorPHP (nicht Rector oder rector-php), Vitest (nicht vitest oder vi-test), Make.com (nicht Make, Make.io oder make.com), Claude 4 (nicht Claude4 oder claude 4), Claude 3.7 (nicht Claude37 oder claude 3.7), Vibe Coding (nicht vibe coding oder VibeCoding), GitHub (nicht Github oder github), Docker (nicht docker), Kubernetes (nicht kubernetes), AWS (nicht aws), PostgreSQL (nicht postgres oder postgresql), Astro (nicht astro), Anthropic (nicht anthropic), Google Gemini (nicht google gemini oder Gemini), VS Code (nicht vscode oder VSCode), Laravel (nicht laravel), Symfony (nicht symfony), Next.js (nicht NextJS oder nextjs), WordPress (nicht wordpress oder Wordpress).";
-const AVOID_EXAGGERATION_PROMPT = "KEINE übertriebenen Wörter wie \"ultimativ\", \"revolutionär\", \"Revolution\", \"revolutionieren\", \"unglaublich\" - halte es sachlich und präzise.";
-const INFORMAL_ADDRESS_PROMPT = "Verwende eine informelle Anrede (\"ihr/euch/eure\" statt \"Sie/Ihnen\") und einen lockeren, direkten Ton.";
+const BRAND_NAMES_PROMPT =
+  "Achte auf die richtige Schreibweise dieser Marken und Begriffe: Never Code Alone (nicht nevercodealone, never code alone oder NeverCodeAlone), Roland Golla (nicht Roland Goler oder andere Varianten), roland@nevercodealone.de (nicht Roland@codealone.de oder andere Varianten), Pimcore (nicht PimCore oder pimcore), TYPO3 (nicht Typo3 oder typo3), CypressIO (nicht Cypress.io oder cypress), JavaScript (nicht Javascript oder javascript), ChatGPT (nicht Chat-GPT oder chatgpt), OpenAI (nicht Open AI oder openai), React (nicht ReactJS oder react), Node.js (nicht NodeJS oder nodejs), Vue.js (nicht VueJS oder vuejs), TypeScript (nicht Typescript oder typescript), PHP (nicht php, Php, prp oder PRP), PHPUnit (nicht PhpUnit oder phpunit), PHPStan (nicht Phpstan oder php-stan), RectorPHP (nicht Rector oder rector-php), Vitest (nicht vitest oder vi-test), Make.com (nicht Make, Make.io oder make.com), Claude 4 (nicht Claude4 oder claude 4), Claude 3.7 (nicht Claude37 oder claude 3.7), Vibe Coding (nicht vibe coding oder VibeCoding), GitHub (nicht Github oder github), Docker (nicht docker), Kubernetes (nicht kubernetes), AWS (nicht aws), PostgreSQL (nicht postgres oder postgresql), Astro (nicht astro), Anthropic (nicht anthropic), Google Gemini (nicht google gemini oder Gemini), VS Code (nicht vscode oder VSCode), Laravel (nicht laravel), Symfony (nicht symfony), Next.js (nicht NextJS oder nextjs), WordPress (nicht wordpress oder Wordpress).";
+const AVOID_EXAGGERATION_PROMPT =
+  'KEINE übertriebenen Wörter wie "ultimativ", "revolutionär", "Revolution", "revolutionieren", "unglaublich" - halte es sachlich und präzise.';
+const INFORMAL_ADDRESS_PROMPT =
+  'Verwende eine informelle Anrede ("ihr/euch/eure" statt "Sie/Ihnen") und einen lockeren, direkten Ton.';
 
 // Available models for fallback
 const AI_MODELS = {
   google: ["gemini-1.5-pro", "gemini-1.5-flash"],
-  anthropic: ["claude-3-haiku-20240307", "claude-3-sonnet-20240229"]
+  anthropic: ["claude-3-haiku-20240307", "claude-3-sonnet-20240229"],
 };
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const body = await request.json() as GenerateRequest;
+    const body = (await request.json()) as GenerateRequest;
     const { type = "youtube", videoDuration, keywords } = body;
     let { transcript } = body;
     let transcriptCleaned = false;
 
     // Validate required fields
-    if (!transcript || typeof transcript !== "string" || transcript.trim().length === 0) {
+    if (
+      !transcript ||
+      typeof transcript !== "string" ||
+      transcript.trim().length === 0
+    ) {
       return new Response(
         JSON.stringify({
           error: "Transkript fehlt oder ist ungültig",
@@ -72,10 +91,18 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Validate type
-    if (type !== "youtube" && type !== "linkedin" && type !== "twitter" && type !== "instagram" && type !== "tiktok" && type !== "keywords") {
+    if (
+      type !== "youtube" &&
+      type !== "linkedin" &&
+      type !== "twitter" &&
+      type !== "instagram" &&
+      type !== "tiktok" &&
+      type !== "keywords"
+    ) {
       return new Response(
         JSON.stringify({
-          error: "Ungültiger Typ. Erlaubt sind: youtube, linkedin, twitter, instagram, tiktok, keywords",
+          error:
+            "Ungültiger Typ. Erlaubt sind: youtube, linkedin, twitter, instagram, tiktok, keywords",
         }),
         {
           status: 400,
@@ -92,7 +119,9 @@ export const POST: APIRoute = async ({ request }) => {
       words.pop();
       transcript = words.join(" ");
       transcriptCleaned = true;
-      console.log("Ein einzelnes Zeichen am Ende des Transkripts wurde entfernt.");
+      console.log(
+        "Ein einzelnes Zeichen am Ende des Transkripts wurde entfernt."
+      );
     }
 
     // Create prompt based on content type
@@ -145,11 +174,11 @@ export const POST: APIRoute = async ({ request }) => {
             messages: [
               {
                 role: "user",
-                content: prompt
-              }
+                content: prompt,
+              },
             ],
           });
-          
+
           text = (message.content[0] as any).text;
           modelUsed = model;
           break;
@@ -166,7 +195,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     // If all providers failed
     if (!modelUsed) {
-      const errorMessage = errors.map(e => `${e.provider}: ${e.message}`).join(", ");
+      const errorMessage = errors
+        .map((e) => `${e.provider}: ${e.message}`)
+        .join(", ");
       return new Response(
         JSON.stringify({
           error: "Inhaltsgenerierung fehlgeschlagen",
@@ -239,12 +270,19 @@ Transkript:
 ${transcript}`;
 }
 
-function createYoutubePrompt(transcript: string, videoDuration?: string, keywords?: string[]): string {
+function createYoutubePrompt(
+  transcript: string,
+  videoDuration?: string,
+  keywords?: string[]
+): string {
   const base = createPromptBase(transcript);
-  const keywordsPrompt = keywords && keywords.length > 0 
-    ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(', ')}`
-    : '';
-  
+  const keywordsPrompt =
+    keywords && keywords.length > 0
+      ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(
+          ", "
+        )}`
+      : "";
+
   return `Du bist ein YouTube-Content-Optimierungsassistent für Entwickler-Content im Jahr 2025. Wichtiger Hinweis: Es handelt sich um YouTube SHORTS, NICHT um lange Videos.
 
 ${base}${keywordsPrompt}
@@ -252,8 +290,12 @@ ${base}${keywordsPrompt}
 Deine Aufgabe ist es:
 1. Eine 100% identische Version des Transkripts zu erstellen mit AUSSCHLIESSLICH korrigierter Interpunktion (Kommas, Punkte) und korrekter Schreibweise der Marken und Begriffe im Brandnames-Hinweis. EINZIGE AUSNAHME: Die im Brandnames-Hinweis genannten Marken und Begriffe müssen in der korrekten Schreibweise angegeben werden. Ansonsten ABSOLUT KEINE Änderungen an anderen Wörtern oder Wortreihenfolge! KEINE weiteren Rechtschreibkorrekturen, KEINE Änderungen am Satzbau. NUR Kommata und Punkte hinzufügen/korrigieren wo nötig plus korrekte Marken-Schreibweise!
 2. Einen SEO-optimierten, aufmerksamkeitsstarken YouTube-Titel zu generieren (60-70 Zeichen, mit Keyword am Anfang)
-3. Eine SEHR LANGE YouTube-Beschreibung zu erstellen (ca. 1500 Zeichen, strukturiert in GENAU 3 sehr ausführlichen Absätzen)${videoDuration ? `
-4. SEO-optimierte Zeitstempel mit Topics generieren (GENAU 5 Zeitstempel basierend auf der Video-Dauer: ${videoDuration})` : ''}
+3. Eine SEHR LANGE YouTube-Beschreibung zu erstellen (ca. 1500 Zeichen, strukturiert in GENAU 3 sehr ausführlichen Absätzen)${
+    videoDuration
+      ? `
+4. SEO-optimierte Zeitstempel mit Topics generieren (GENAU 5 Zeitstempel basierend auf der Video-Dauer: ${videoDuration})`
+      : ""
+  }
 
 Für den Titel:
 - WICHTIGSTE REGEL: Keywords MÜSSEN am Anfang stehen für optimale Suchbarkeit
@@ -267,6 +309,10 @@ Für den Titel:
   * "[Hauptkeyword] 2025: Ja oder Nein?"
   * "Warum [Hauptkeyword] nutzen?"
   * "[Hauptkeyword]: Die wichtigste Frage"
+  * Ich-Perspektive: Schreibe den gesamten Text aus der Ich-Perspektive ("Ich", "mein", "meine"). Entferne alle Verweise in der dritten Person wie "Roland Golla sagt" oder "sein Angebot".
+  * Selbstbewusster & lösungsorientierter Ton: Stelle Probleme als Herausforderungen dar, die du persönlich siehst und löst. Präsentiere "Never Code Alone" nicht als eine mögliche Lösung, sondern als die entscheidende, effektive und überlegene Lösung, die das Problem aktiv behebt.
+  * Einladende Diskussion: Formuliere direkte Aufforderungen zum Widerspruch (wie "Widersprecht mir gerne!") um, sodass sie kollaborativer und souveräner klingen (z. B. "Ich bin auch auf andere Perspektiven gespannt!" oder "Teilt eure Sichtweise!").
+  * Starker Call to Action: Beende die Beschreibung mit einem starken, direkten und persönlichen Aufruf zum Handeln. Fordere die Zuschauer auf, dich, Roland Golla, direkt zu kontaktieren, um ihr spezifisches Problem zu lösen oder ihren Code zu reparieren. Mache deutlich, dass du derjenige bist, der handelt.
   
   FÜR LANGE VIDEOS (mit Zeitangabe = Tutorials/Mehrwert):
   * "[Hauptkeyword] Tutorial: Das musst du wissen"
@@ -297,7 +343,9 @@ Für die Beschreibung:
 Hinweise:
 - Keine Programmiersprache schreiben, die nicht im Transkript vorkommt.
 - NIEMALS Formulierungen wie "Im Video diskutieren wir" verwenden - es sind SHORTS!
-- **ABSOLUT KRITISCH: Schreibe in der Beschreibung NUR das, was im Short (Transkript) besprochen wurde. Erfinde KEINE Informationen, Beispiele, Tools, Strategien oder Meinungen, die nicht explizit genannt werden.**${videoDuration ? `
+- **ABSOLUT KRITISCH: Schreibe in der Beschreibung NUR das, was im Short (Transkript) besprochen wurde. Erfinde KEINE Informationen, Beispiele, Tools, Strategien oder Meinungen, die nicht explizit genannt werden.**${
+    videoDuration
+      ? `
 
 Für die Zeitstempel (nur wenn Video-Dauer angegeben: ${videoDuration}):
 - Erstelle GENAU 5 Zeitstempel gleichmäßig über die Video-Dauer verteilt
@@ -309,7 +357,9 @@ Für die Zeitstempel (nur wenn Video-Dauer angegeben: ${videoDuration}):
 - Format: "0:00 Topic-Name"
 - Topics sollen als Sprungmarken fungieren und Nutzer zum Klicken animieren
 - Verwende Keywords aus dem Transkript in den Topic-Namen
-- Beispiel: "0:00 Warum PHP 2024 relevant bleibt", "2:15 Moderne PHP-Features im Einsatz"` : ''}
+- Beispiel: "0:00 Warum PHP 2024 relevant bleibt", "2:15 Moderne PHP-Features im Einsatz"`
+      : ""
+  }
 
 Bitte formatiere deine Antwort wie folgt (benutze weiterhin die englischen Abschnittsbezeichnungen, aber der Inhalt soll auf Deutsch sein):
 
@@ -320,18 +370,25 @@ TITLE:
 [YouTube-Titel mit These/Meinung, 60-70 Zeichen]
 
 DESCRIPTION:
-[SEHR LANGE YouTube-Beschreibung in GENAU 3 sehr ausführlichen Absätzen mit jeweils ca. 500 Zeichen, insgesamt ca. 1500 Zeichen, mit kontroversen Thesen und Fragen an die Community]${videoDuration ? `
+[SEHR LANGE YouTube-Beschreibung in GENAU 3 sehr ausführlichen Absätzen mit jeweils ca. 500 Zeichen, insgesamt ca. 1500 Zeichen, mit kontroversen Thesen und Fragen an die Community]${
+    videoDuration
+      ? `
 
 TIMESTAMPS:
-[5 SEO-optimierte Zeitstempel mit Topics, gleichmäßig über ${videoDuration} verteilt]` : ''}`;
+[5 SEO-optimierte Zeitstempel mit Topics, gleichmäßig über ${videoDuration} verteilt]`
+      : ""
+  }`;
 }
 
 function createLinkedinPrompt(transcript: string, keywords?: string[]): string {
   const base = createPromptBase(transcript);
-  const keywordsPrompt = keywords && keywords.length > 0 
-    ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(', ')}`
-    : '';
-  
+  const keywordsPrompt =
+    keywords && keywords.length > 0
+      ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(
+          ", "
+        )}`
+      : "";
+
   return `Du bist ein LinkedIn-Content-Optimierungsassistent im Jahr 2025. Ich stelle dir ein Transkript zur Verfügung, das ich in einen überzeugenden LinkedIn-Post umwandeln möchte.
 
 ${base}${keywordsPrompt}
@@ -446,10 +503,13 @@ INSTAGRAM POST:
 
 function createTiktokPrompt(transcript: string, keywords?: string[]): string {
   const base = createPromptBase(transcript);
-  const keywordsPrompt = keywords && keywords.length > 0 
-    ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(', ')}`
-    : '';
-  
+  const keywordsPrompt =
+    keywords && keywords.length > 0
+      ? `\n\nPRIORITÄT-KEYWORDS: Diese Keywords sollen priorisiert und prominent verwendet werden: ${keywords.join(
+          ", "
+        )}`
+      : "";
+
   return `Du bist ein TikTok-Content-Optimierungsassistent für Developer-Content im Jahr 2025. Ich stelle dir ein Transkript zur Verfügung, das ich in einen ansprechenden TikTok-Post umwandeln möchte.
 
 ${base}${keywordsPrompt}
@@ -542,7 +602,9 @@ function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
   }
 
   // Extract description
-  const descriptionMatch = text.match(/DESCRIPTION:\s*([\s\S]*?)(?=TIMESTAMPS:|$)/);
+  const descriptionMatch = text.match(
+    /DESCRIPTION:\s*([\s\S]*?)(?=TIMESTAMPS:|$)/
+  );
   if (descriptionMatch?.[1]) {
     result.description = descriptionMatch[1].trim();
   }
@@ -626,11 +688,11 @@ function parseKeywordsResponse(text: string): Partial<GenerateResponse> {
   if (keywordsMatch?.[1]) {
     const keywordsText = keywordsMatch[1].trim();
     const keywords = keywordsText
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
       .slice(0, 3); // Ensure max 3 keywords
-    
+
     result.keywords = keywords;
   }
 
