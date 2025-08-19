@@ -339,6 +339,7 @@ Für den Titel:
   * "[Hauptkeyword] 2025: Ja oder Nein?"
   * "Warum [Hauptkeyword] nutzen?"
   * "[Hauptkeyword]: Die wichtigste Frage"
+  * Nie benutz 'Im Short  zeige ich', 'Im Short wurde gezeigt', 'Im Video' usw.
   * Ich-Perspektive: Schreibe den gesamten Text aus der Ich-Perspektive ("Ich", "mein", "meine"). Entferne alle Verweise in der dritten Person wie "Roland Golla sagt" oder "sein Angebot".
   * Selbstbewusster & lösungsorientierter Ton: Stelle Probleme als Herausforderungen dar, die du persönlich siehst und löst. Präsentiere "Never Code Alone" nicht als eine mögliche Lösung, sondern als die entscheidende, effektive und überlegene Lösung, die das Problem aktiv behebt.
   * Einladende Diskussion: Formuliere direkte Aufforderungen zum Widerspruch (wie "Widersprecht mir gerne!") um, sodass sie kollaborativer und souveräner klingen (z. B. "Ich bin auch auf andere Perspektiven gespannt!" oder "Teilt eure Sichtweise!").
