@@ -38,17 +38,21 @@ interface AIError {
 }
 
 // Initialize AI providers
-const GOOGLE_GEMINI_API_KEY = import.meta.env.GOOGLE_GEMINI_API_KEY?.replace(
-  /["']/g,
-  ""
-).trim();
-const ANTHROPIC_API_KEY = import.meta.env.ANTHROPIC_API_KEY?.replace(
-  /["']/g,
-  ""
-).trim();
+const GOOGLE_GEMINI_API_KEY =
+  import.meta.env.GOOGLE_GEMINI_API_KEY?.replace(
+    /["']/g,
+    ""
+  ).trim();
+const ANTHROPIC_API_KEY =
+  import.meta.env.ANTHROPIC_API_KEY?.replace(
+    /["']/g,
+    ""
+  ).trim();
 
 const genAI = new GoogleGenerativeAI(GOOGLE_GEMINI_API_KEY);
-const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({
+  apiKey: ANTHROPIC_API_KEY,
+});
 
 // Global prompt helpers for consistent content generation
 const BRAND_NAMES_PROMPT =
@@ -61,13 +65,20 @@ const INFORMAL_ADDRESS_PROMPT =
 // Available models for fallback
 const AI_MODELS = {
   google: ["gemini-1.5-pro", "gemini-1.5-flash"],
-  anthropic: ["claude-3-haiku-20240307", "claude-3-sonnet-20240229"],
+  anthropic: [
+    "claude-3-haiku-20240307",
+    "claude-3-sonnet-20240229",
+  ],
 };
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = (await request.json()) as GenerateRequest;
-    const { type = "youtube", videoDuration, keywords } = body;
+    const {
+      type = "youtube",
+      videoDuration,
+      keywords,
+    } = body;
     let { transcript } = body;
     let transcriptCleaned = false;
 
@@ -115,7 +126,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Clean transcript: Remove single characters at the end
     const words = transcript.trim().split(/\s+/);
-    if (words.length > 0 && words[words.length - 1].length === 1) {
+    if (
+      words.length > 0 &&
+      words[words.length - 1].length === 1
+    ) {
       words.pop();
       transcript = words.join(" ");
       transcriptCleaned = true;
@@ -137,7 +151,11 @@ export const POST: APIRoute = async ({ request }) => {
     } else if (type === "keywords") {
       prompt = createKeywordsPrompt(transcript);
     } else {
-      prompt = createYoutubePrompt(transcript, videoDuration, keywords);
+      prompt = createYoutubePrompt(
+        transcript,
+        videoDuration,
+        keywords
+      );
     }
 
     // Try to generate content with AI providers
@@ -148,8 +166,12 @@ export const POST: APIRoute = async ({ request }) => {
     // Try Google Gemini models
     for (const model of AI_MODELS.google) {
       try {
-        const genModel = genAI.getGenerativeModel({ model });
-        const result = await genModel.generateContent(prompt);
+        const genModel = genAI.getGenerativeModel({
+          model,
+        });
+        const result = await genModel.generateContent(
+          prompt
+        );
         const response = await result.response;
         text = response.text();
         modelUsed = model;
@@ -160,7 +182,10 @@ export const POST: APIRoute = async ({ request }) => {
           message: error.message || "Unbekannter Fehler",
           status: error.status,
         });
-        console.error(`Fehler mit ${model}:`, error.message);
+        console.error(
+          `Fehler mit ${model}:`,
+          error.message
+        );
       }
     }
 
@@ -188,7 +213,10 @@ export const POST: APIRoute = async ({ request }) => {
             message: error.message || "Unbekannter Fehler",
             status: error.status,
           });
-          console.error(`Fehler mit ${model}:`, error.message);
+          console.error(
+            `Fehler mit ${model}:`,
+            error.message
+          );
         }
       }
     }
@@ -246,7 +274,8 @@ export const POST: APIRoute = async ({ request }) => {
     console.error("Unerwarteter Fehler:", error);
     return new Response(
       JSON.stringify({
-        error: "Unerwarteter Fehler beim Generieren des Inhalts",
+        error:
+          "Unerwarteter Fehler beim Generieren des Inhalts",
         message: error.message,
       }),
       {
@@ -300,7 +329,8 @@ Deine Aufgabe ist es:
 Für den Titel:
 - WICHTIGSTE REGEL: Keywords MÜSSEN am Anfang stehen für optimale Suchbarkeit
 - VERBOTEN: "Meine Meinung zu..." - diese Formulierung NIEMALS verwenden!
-- KRITISCH: Titel MUSS zum Video-Typ passen:
+- KRITISCH: Titel MUSS zum Video-Typ passen
+- Wenn die Sprache des Videos Englisch ist, mach den Title auf Englisch
   
   FÜR KURZE VIDEOS (ohne Zeitangabe = Shorts/Fragen):
   * "Ist [Hauptkeyword] die beste Lösung?"
@@ -309,6 +339,7 @@ Für den Titel:
   * "[Hauptkeyword] 2025: Ja oder Nein?"
   * "Warum [Hauptkeyword] nutzen?"
   * "[Hauptkeyword]: Die wichtigste Frage"
+  * Nie benutz 'Im Short  zeige ich', 'Im Short wurde gezeigt', 'Im Video' usw.
   * Ich-Perspektive: Schreibe den gesamten Text aus der Ich-Perspektive ("Ich", "mein", "meine"). Entferne alle Verweise in der dritten Person wie "Roland Golla sagt" oder "sein Angebot".
   * Selbstbewusster & lösungsorientierter Ton: Stelle Probleme als Herausforderungen dar, die du persönlich siehst und löst. Präsentiere "Never Code Alone" nicht als eine mögliche Lösung, sondern als die entscheidende, effektive und überlegene Lösung, die das Problem aktiv behebt.
   * Einladende Diskussion: Formuliere direkte Aufforderungen zum Widerspruch (wie "Widersprecht mir gerne!") um, sodass sie kollaborativer und souveräner klingen (z. B. "Ich bin auch auf andere Perspektiven gespannt!" oder "Teilt eure Sichtweise!").
@@ -328,6 +359,7 @@ Für den Titel:
 - NUR bei langen Videos mit nachweisbarem Inhalt: Zahlen verwenden wenn tatsächlich vorhanden
 - ABSOLUT KEINE Sonderzeichen wie (), &, #, ! - nur Buchstaben, Zahlen und Doppelpunkt
 - WICHTIG: Statt "&" IMMER "und" oder "+" schreiben! Beispiel: "Startups und Investments" NICHT "Startups & Investments"
+- Schreib 'DDEV' statt 'ddef', 'def'
 - Ziel: 60-70 Zeichen für optimale YouTube-Anzeige
 
 Für die Beschreibung:
@@ -335,6 +367,7 @@ Für die Beschreibung:
 - TOTAL WICHTIG: Jeder Absatz soll etwa 500 Zeichen lang sein! Die gesamte Beschreibung soll ca. 1500 Zeichen umfassen.
 - Die Beschreibung MUSS sehr detailliert und umfangreich sein mit vielen Informationen und Kontext, ABER **AUSSCHLIESSLICH BASIEREND AUF DEM TRANSKRIPTINHALT!** Erfinde nichts!
 - WICHTIG: Integriere die Priorität-Keywords natürlich und prominent in die Beschreibung
+- Wenn die Sprache des Videos Englisch ist, mach die Beschreibung auf Englisch
 - Absatz 1: Stelle eine These oder kontroverse Meinung auf, die sich aus dem Transkript ergibt (8-10 Sätze) - WICHTIG: Der ERSTE SATZ muss mit dem Hauptkeyword beginnen und direkt eine Meinung oder These präsentieren!
 - Absatz 2: Führe Argumente und Gegenpositionen aus **die im Short (Transkript) erwähnt werden** (8-10 Sätze) - Formuliere Fragen wie "Was denkt ihr zu..." oder "Habt ihr ähnliche Erfahrungen mit..."
 - Absatz 3: Fordere die Community zur Diskussion auf (8-10 Sätze) - Stelle konkrete Fragen, lade zu Gegenargumenten ein, frage nach eigenen Erfahrungen!
@@ -343,6 +376,11 @@ Für die Beschreibung:
 Hinweise:
 - Keine Programmiersprache schreiben, die nicht im Transkript vorkommt.
 - NIEMALS Formulierungen wie "Im Video diskutieren wir" verwenden - es sind SHORTS!
+- "Clothe", "clode", "clot" usw erzatz mit "Claude" 
+- "Superlo", "Superclo", "Superclode", uns erzatz mit "SuperClaude"
+- "PAP","PP"  erzatz mit "PHP"
+- "Sulo", "Solu" erzatz mit "Sulu"
+- **ABSOLUT KRITISCH: wenn die transkript auf englisch ist, schreibe korrigierte transkript, title und beschreibung auf englisch
 - **ABSOLUT KRITISCH: Schreibe in der Beschreibung NUR das, was im Short (Transkript) besprochen wurde. Erfinde KEINE Informationen, Beispiele, Tools, Strategien oder Meinungen, die nicht explizit genannt werden.**${
     videoDuration
       ? `
@@ -361,7 +399,7 @@ Für die Zeitstempel (nur wenn Video-Dauer angegeben: ${videoDuration}):
       : ""
   }
 
-Bitte formatiere deine Antwort wie folgt (benutze weiterhin die englischen Abschnittsbezeichnungen, aber der Inhalt soll auf Deutsch sein):
+Bitte formatiere deine Antwort wie folgt (benutze weiterhin die englischen Abschnittsbezeichnungen, aber der Inhalt soll auf Deutsch oder Englisch sein):
 
 TRANSCRIPT:
 [korrigierter Transkripttext]
@@ -380,7 +418,10 @@ TIMESTAMPS:
   }`;
 }
 
-function createLinkedinPrompt(transcript: string, keywords?: string[]): string {
+function createLinkedinPrompt(
+  transcript: string,
+  keywords?: string[]
+): string {
   const base = createPromptBase(transcript);
   const keywordsPrompt =
     keywords && keywords.length > 0
@@ -501,7 +542,10 @@ INSTAGRAM POST:
 [Der komplette Instagram-Post auf Deutsch mit Absätzen und genau 10 Hashtags]`;
 }
 
-function createTiktokPrompt(transcript: string, keywords?: string[]): string {
+function createTiktokPrompt(
+  transcript: string,
+  keywords?: string[]
+): string {
   const base = createPromptBase(transcript);
   const keywordsPrompt =
     keywords && keywords.length > 0
@@ -585,7 +629,9 @@ keyword1
 keyword2
 keyword3`;
 }
-function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
+function parseYoutubeResponse(
+  text: string
+): Partial<GenerateResponse> {
   // Default values in case parsing fails
   const result: Partial<GenerateResponse> = {
     transcript: "",
@@ -594,13 +640,17 @@ function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
   };
 
   // Extract transcript
-  const transcriptMatch = text.match(/TRANSCRIPT:\s*([\s\S]*?)(?=TITLE:|$)/);
+  const transcriptMatch = text.match(
+    /TRANSCRIPT:\s*([\s\S]*?)(?=TITLE:|$)/
+  );
   if (transcriptMatch?.[1]) {
     result.transcript = transcriptMatch[1].trim();
   }
 
   // Extract title
-  const titleMatch = text.match(/TITLE:\s*([\s\S]*?)(?=DESCRIPTION:|$)/);
+  const titleMatch = text.match(
+    /TITLE:\s*([\s\S]*?)(?=DESCRIPTION:|$)/
+  );
   if (titleMatch?.[1]) {
     result.title = titleMatch[1].trim();
   }
@@ -614,7 +664,9 @@ function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
   }
 
   // Extract timestamps (if present)
-  const timestampsMatch = text.match(/TIMESTAMPS:\s*([\s\S]*?)(?=$)/);
+  const timestampsMatch = text.match(
+    /TIMESTAMPS:\s*([\s\S]*?)(?=$)/
+  );
   if (timestampsMatch?.[1]) {
     result.timestamps = timestampsMatch[1].trim();
   }
@@ -622,14 +674,18 @@ function parseYoutubeResponse(text: string): Partial<GenerateResponse> {
   return result;
 }
 
-function parseLinkedinResponse(text: string): Partial<GenerateResponse> {
+function parseLinkedinResponse(
+  text: string
+): Partial<GenerateResponse> {
   // Default values in case parsing fails
   const result: Partial<GenerateResponse> = {
     linkedinPost: "",
   };
 
   // Extract LinkedIn post
-  const linkedinMatch = text.match(/LINKEDIN POST:\s*([\s\S]*?)(?=$)/);
+  const linkedinMatch = text.match(
+    /LINKEDIN POST:\s*([\s\S]*?)(?=$)/
+  );
   if (linkedinMatch?.[1]) {
     result.linkedinPost = linkedinMatch[1].trim();
   }
@@ -637,14 +693,18 @@ function parseLinkedinResponse(text: string): Partial<GenerateResponse> {
   return result;
 }
 
-function parseTwitterResponse(text: string): Partial<GenerateResponse> {
+function parseTwitterResponse(
+  text: string
+): Partial<GenerateResponse> {
   // Default values in case parsing fails
   const result: Partial<GenerateResponse> = {
     twitterPost: "",
   };
 
   // Extract Twitter post
-  const twitterMatch = text.match(/TWITTER POST:\s*([\s\S]*?)(?=$)/);
+  const twitterMatch = text.match(
+    /TWITTER POST:\s*([\s\S]*?)(?=$)/
+  );
   if (twitterMatch?.[1]) {
     result.twitterPost = twitterMatch[1].trim();
   }
@@ -652,14 +712,18 @@ function parseTwitterResponse(text: string): Partial<GenerateResponse> {
   return result;
 }
 
-function parseInstagramResponse(text: string): Partial<GenerateResponse> {
+function parseInstagramResponse(
+  text: string
+): Partial<GenerateResponse> {
   // Default values in case parsing fails
   const result: Partial<GenerateResponse> = {
     instagramPost: "",
   };
 
   // Extract Instagram post
-  const instagramMatch = text.match(/INSTAGRAM POST:\s*([\s\S]*?)(?=$)/);
+  const instagramMatch = text.match(
+    /INSTAGRAM POST:\s*([\s\S]*?)(?=$)/
+  );
   if (instagramMatch?.[1]) {
     result.instagramPost = instagramMatch[1].trim();
   }
@@ -667,14 +731,18 @@ function parseInstagramResponse(text: string): Partial<GenerateResponse> {
   return result;
 }
 
-function parseTiktokResponse(text: string): Partial<GenerateResponse> {
+function parseTiktokResponse(
+  text: string
+): Partial<GenerateResponse> {
   // Default values in case parsing fails
   const result: Partial<GenerateResponse> = {
     tiktokPost: "",
   };
 
   // Extract TikTok post
-  const tiktokMatch = text.match(/TIKTOK POST:\s*([\s\S]*?)(?=$)/);
+  const tiktokMatch = text.match(
+    /TIKTOK POST:\s*([\s\S]*?)(?=$)/
+  );
   if (tiktokMatch?.[1]) {
     result.tiktokPost = tiktokMatch[1].trim();
   }
@@ -682,13 +750,17 @@ function parseTiktokResponse(text: string): Partial<GenerateResponse> {
   return result;
 }
 
-function parseKeywordsResponse(text: string): Partial<GenerateResponse> {
+function parseKeywordsResponse(
+  text: string
+): Partial<GenerateResponse> {
   const result: Partial<GenerateResponse> = {
     keywords: [],
   };
 
   // Extract keywords
-  const keywordsMatch = text.match(/KEYWORDS:\s*([\s\S]*?)(?=$)/);
+  const keywordsMatch = text.match(
+    /KEYWORDS:\s*([\s\S]*?)(?=$)/
+  );
   if (keywordsMatch?.[1]) {
     const keywordsText = keywordsMatch[1].trim();
     const keywords = keywordsText
