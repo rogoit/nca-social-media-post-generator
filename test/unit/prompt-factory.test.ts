@@ -7,10 +7,10 @@ describe('PromptFactory', () => {
   describe('createPrompt', () => {
     it('should create YouTube prompt without optional parameters', () => {
       const prompt = PromptFactory.createPrompt('youtube', testTranscript);
-      
+
       expect(prompt).toContain('YouTube-Content-Optimierungsassistent');
       expect(prompt).toContain(testTranscript);
-      expect(prompt).toContain('NCA (nicht NCR, nca oder andere Varianten)');
+      expect(prompt).toContain('Never Code Alone (nicht nevercodealone, never code alone oder NeverCodeAlone)');
       expect(prompt).toContain('TRANSCRIPT:');
       expect(prompt).toContain('TITLE:');
       expect(prompt).toContain('DESCRIPTION:');
@@ -114,10 +114,10 @@ describe('PromptFactory', () => {
 
     it('should include brand name guidelines in all prompts', () => {
       const platforms = ['youtube', 'linkedin', 'twitter', 'instagram', 'tiktok', 'keywords'] as const;
-      
+
       platforms.forEach(platform => {
         const prompt = PromptFactory.createPrompt(platform, testTranscript);
-        expect(prompt).toContain('NCA (nicht NCR, nca oder andere Varianten)');
+        expect(prompt).toContain('Never Code Alone (nicht nevercodealone, never code alone oder NeverCodeAlone)');
         expect(prompt).toContain('Roland Golla');
         expect(prompt).toContain('JavaScript (nicht Javascript oder javascript)');
       });
