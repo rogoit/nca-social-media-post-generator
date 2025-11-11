@@ -4,10 +4,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     env: {
-      // Mock API keys for testing
+      // Mock API keys for unit/functional tests
+      // Real tests will use actual env vars
       GOOGLE_GEMINI_API_KEY: 'mock-google-key',
       ANTHROPIC_API_KEY: 'mock-anthropic-key',
-      // Mock model configuration for testing
       GOOGLE_GEMINI_MODELS: 'gemini-2.5-pro,gemini-2.5-flash',
       ANTHROPIC_MODELS: 'claude-3-haiku-20240307,claude-3-sonnet-20240229',
     },
@@ -21,7 +21,7 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.config.*',
         '**/coverage/**',
-        'src/scripts/**', // Browser modules tested separately
+        'src/scripts/**',
       ],
       thresholds: {
         global: {
@@ -32,8 +32,9 @@ export default defineConfig({
         }
       }
     },
+    // Default: run unit + functional (exclude real tests)
     include: ['test/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'test/real/**'],
   },
   resolve: {
     alias: {

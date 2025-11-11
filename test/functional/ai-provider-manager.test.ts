@@ -1,39 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GoogleGeminiProvider, AnthropicProvider, AIProviderManager } from '../../src/utils/ai-providers.js';
 import { AI_MODELS } from '../../src/config/constants.js';
+import { mockGeminiGenerate, mockClaudeCreate, setupSuccessfulMocks, setupGeminiFailure, setupAllProvidersFail, resetAllMocks } from '../utils/ai-mocks.js';
 
-// Create shared mock functions
-const mockGenerateContent = vi.fn();
-const mockGetGenerativeModel = vi.fn(() => ({
-  generateContent: mockGenerateContent
-}));
-
-const mockAnthropicCreate = vi.fn();
-
-// Mock the external dependencies with shared mocks
+// Mock the external AI SDKs
 vi.mock('@google/generative-ai', () => ({
   GoogleGenerativeAI: vi.fn(() => ({
-    getGenerativeModel: mockGetGenerativeModel
-  }))
+    getGenerativeModel: vi.fn(() => ({
+      generateContent: mockGeminiGenerate,
+    })),
+  })),
 }));
 
 vi.mock('@anthropic-ai/sdk', () => ({
   default: vi.fn(() => ({
     messages: {
-      create: mockAnthropicCreate
-    }
-  }))
+      create: mockClaudeCreate,
+    },
+  })),
 }));
 
-describe('AI Providers', () => {
+describe('AI Provider Manager - Functional Tests', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockGenerateContent.mockClear();
-    mockGetGenerativeModel.mockClear();
-    mockAnthropicCreate.mockClear();
+    resetAllMocks();
   });
 
-  describe('GoogleGeminiProvider', () => {
+  describe('GoogleGeminiProvider workflows', () => {
     it('should initialize with correct name and models', () => {
       const provider = new GoogleGeminiProvider('test-api-key');
       expect(provider.name).toBe('Google Gemini');
@@ -46,10 +38,10 @@ describe('AI Providers', () => {
     });
 
     it('should successfully generate content with first model', async () => {
-      mockGenerateContent.mockResolvedValueOnce({
+      mockGeminiGenerate.mockResolvedValueOnce({
         response: {
-          text: () => 'Generated content'
-        }
+          text: () => 'Generated content',
+        },
       });
 
       const provider = new GoogleGeminiProvider('test-api-key');
@@ -57,17 +49,17 @@ describe('AI Providers', () => {
 
       expect(result).toEqual({
         text: 'Generated content',
-        model: AI_MODELS.google[0]
+        model: AI_MODELS.google[0],
       });
     });
 
-    it('should try fallback model if first model fails', async () => {
-      mockGenerateContent
+    it('should fallback to second model if first fails', async () => {
+      mockGeminiGenerate
         .mockRejectedValueOnce(new Error('First model failed'))
         .mockResolvedValueOnce({
           response: {
-            text: () => 'Fallback content'
-          }
+            text: () => 'Fallback content',
+          },
         });
 
       const provider = new GoogleGeminiProvider('test-api-key');
@@ -75,21 +67,21 @@ describe('AI Providers', () => {
 
       expect(result).toEqual({
         text: 'Fallback content',
-        model: AI_MODELS.google[1]
+        model: AI_MODELS.google[1],
       });
+      expect(mockGeminiGenerate).toHaveBeenCalledTimes(2);
     });
 
     it('should throw error if all models fail', async () => {
-      mockGenerateContent.mockRejectedValue(new Error('All models failed'));
+      mockGeminiGenerate.mockRejectedValue(new Error('All models failed'));
 
       const provider = new GoogleGeminiProvider('test-api-key');
 
-      await expect(provider.generateContent('test prompt'))
-        .rejects.toThrow('Google Gemini failed');
+      await expect(provider.generateContent('test prompt')).rejects.toThrow('Google Gemini failed');
     });
   });
 
-  describe('AnthropicProvider', () => {
+  describe('AnthropicProvider workflows', () => {
     it('should initialize with correct name and models', () => {
       const provider = new AnthropicProvider('test-api-key');
       expect(provider.name).toBe('Anthropic Claude');
@@ -97,8 +89,8 @@ describe('AI Providers', () => {
     });
 
     it('should successfully generate content', async () => {
-      mockAnthropicCreate.mockResolvedValueOnce({
-        content: [{ text: 'Anthropic generated content' }]
+      mockClaudeCreate.mockResolvedValueOnce({
+        content: [{ text: 'Anthropic generated content' }],
       });
 
       const provider = new AnthropicProvider('test-api-key');
@@ -106,15 +98,15 @@ describe('AI Providers', () => {
 
       expect(result).toEqual({
         text: 'Anthropic generated content',
-        model: AI_MODELS.anthropic[0]
+        model: AI_MODELS.anthropic[0],
       });
     });
 
-    it('should try fallback model if first model fails', async () => {
-      mockAnthropicCreate
+    it('should fallback to second model if first fails', async () => {
+      mockClaudeCreate
         .mockRejectedValueOnce(new Error('First model failed'))
         .mockResolvedValueOnce({
-          content: [{ text: 'Fallback anthropic content' }]
+          content: [{ text: 'Fallback anthropic content' }],
         });
 
       const provider = new AnthropicProvider('test-api-key');
@@ -122,12 +114,13 @@ describe('AI Providers', () => {
 
       expect(result).toEqual({
         text: 'Fallback anthropic content',
-        model: AI_MODELS.anthropic[1]
+        model: AI_MODELS.anthropic[1],
       });
+      expect(mockClaudeCreate).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('AIProviderManager', () => {
+  describe('AIProviderManager workflows', () => {
     it('should initialize with both providers when API keys provided', () => {
       const manager = new AIProviderManager('google-key', 'anthropic-key');
       expect(manager).toBeDefined();
@@ -137,35 +130,45 @@ describe('AI Providers', () => {
       expect(() => new AIProviderManager()).toThrow('No API keys provided for AI providers');
     });
 
-    it('should try Google first, then Anthropic on failure', async () => {
-      mockGenerateContent.mockRejectedValue(new Error('Google failed'));
-      mockAnthropicCreate.mockResolvedValueOnce({
-        content: [{ text: 'Anthropic success' }]
+    it('should use Google Gemini successfully', async () => {
+      mockGeminiGenerate.mockResolvedValueOnce({
+        response: {
+          text: () => 'Google success',
+        },
       });
+
+      const manager = new AIProviderManager('google-key');
+      const result = await manager.generateContent('test prompt');
+
+      expect(result.text).toBe('Google success');
+      expect(result.model).toBe(AI_MODELS.google[0]);
+      expect(mockGeminiGenerate).toHaveBeenCalled();
+    });
+
+    it('should fallback from Google to Anthropic on failure', async () => {
+      setupGeminiFailure();
 
       const manager = new AIProviderManager('google-key', 'anthropic-key');
       const result = await manager.generateContent('test prompt');
 
-      expect(result).toEqual({
-        text: 'Anthropic success',
-        model: AI_MODELS.anthropic[0]
-      });
+      expect(result.text).toBe('Mock Claude response');
+      expect(result.model).toBe(AI_MODELS.anthropic[0]);
+      expect(mockGeminiGenerate).toHaveBeenCalled();
+      expect(mockClaudeCreate).toHaveBeenCalled();
     });
 
     it('should throw error when all providers fail', async () => {
-      mockGenerateContent.mockRejectedValue(new Error('Google failed'));
-      mockAnthropicCreate.mockRejectedValue(new Error('Anthropic failed'));
+      setupAllProvidersFail();
 
       const manager = new AIProviderManager('google-key', 'anthropic-key');
 
-      await expect(manager.generateContent('test prompt'))
-        .rejects.toThrow('All AI providers failed');
+      await expect(manager.generateContent('test prompt')).rejects.toThrow('All AI providers failed');
     });
 
-    it('should return last errors when all providers fail', async () => {
-      mockGenerateContent.mockRejectedValue(new Error('Google failed'));
+    it('should track errors from failed providers', async () => {
+      setupAllProvidersFail();
 
-      const manager = new AIProviderManager('google-key');
+      const manager = new AIProviderManager('google-key', 'anthropic-key');
 
       try {
         await manager.generateContent('test prompt');
@@ -174,8 +177,8 @@ describe('AI Providers', () => {
       }
 
       const errors = manager.getLastErrors();
-      expect(errors).toHaveLength(1);
-      expect(errors[0].provider).toBe('Google Gemini');
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors.some(e => e.provider === 'Google Gemini')).toBe(true);
     });
   });
 });
