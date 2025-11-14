@@ -77,7 +77,15 @@
    - Your new tests pass
    - No broken functionality
 
-3. **Clean up if needed**:
+3. **Format code with Prettier**:
+   ```bash
+   npm run format
+   ```
+   - Ensures consistent code style
+   - Automatically fixes formatting issues
+   - Must pass before commit
+
+4. **Clean up if needed**:
    - Remove debug code
    - Improve code clarity
    - Update comments
@@ -116,3 +124,45 @@
 - Include test file in commit
 - Use conventional commit messages
 - Document what changed and why
+
+## 4. Code Conventions
+
+### Code Style
+- **Prettier**: All code must be formatted with Prettier
+- **Run before commit**: `npm run format`
+- **Check formatting**: `npm run format:check`
+- **Configuration**: Project uses Prettier with Astro plugin
+
+### TypeScript Standards
+- **Type safety**: No `any` types without justification
+- **Strict mode**: Follow project's strict TypeScript config
+- **Explicit types**: Define interfaces for all data structures
+- **Type checking**: Run `npm run type-check` before commit
+
+### Naming Conventions
+- **Files**: kebab-case (e.g., `brand-detection.test.ts`)
+- **Functions**: camelCase (e.g., `parseYouTubeResponse`)
+- **Classes**: PascalCase (e.g., `AIProviderManager`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `BRAND_NAMES`)
+
+### File Organization
+- **Config**: `src/config/` for constants and prompts
+- **Utils**: `src/utils/` for business logic
+- **Types**: `src/types/` for TypeScript definitions
+- **Tests**: Match source structure in `test/{unit,functional,real}/`
+
+### Import Order
+1. External dependencies (npm packages)
+2. Internal types
+3. Internal utilities
+4. Blank line between groups
+
+### Code Quality Checklist
+Before committing, ensure:
+- [ ] All tests pass (`npm run test:all`)
+- [ ] Code formatted with Prettier (`npm run format`)
+- [ ] No TypeScript errors (`npm run type-check`)
+- [ ] No console.log statements (except in error handling)
+- [ ] Existing tests unchanged (unless explicitly required)
+- [ ] New tests added for new features
+- [ ] Comments added for complex logic
