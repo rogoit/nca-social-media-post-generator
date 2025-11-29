@@ -39,31 +39,38 @@ Für den Titel:
 - WICHTIGSTE REGEL: Keywords MÜSSEN am Anfang stehen für optimale Suchbarkeit
 - VERBOTEN: "Meine Meinung zu..." - diese Formulierung NIEMALS verwenden!
 - KRITISCH: Titel MUSS zum Video-Typ passen:
-  
-  FÜR KURZE VIDEOS (ohne Zeitangabe = Shorts/Fragen):
-  * "Ist [Hauptkeyword] die beste Lösung?"
-  * "[Hauptkeyword] oder [Alternative]: Was ist besser?"
-  * "Braucht man [Hauptkeyword] wirklich?"
-  * "[Hauptkeyword] 2025: Ja oder Nein?"
-  * "Warum [Hauptkeyword] nutzen?"
-  * "[Hauptkeyword]: Die wichtigste Frage"
+
+  FÜR KURZE VIDEOS (ohne Zeitangabe = Shorts):
+  TITEL-RICHTLINIEN (flexibel formulieren, keine festen Muster für Kanalvielfalt):
+  * Ton: Lehrreich, einladend, positiv - der Zuschauer soll etwas lernen wollen
+  * Fokus: Was lernt der Zuschauer? Was ist der Mehrwert?
+  * Stil: Abwechslungsreich formulieren - mal Aussage, mal positive Frage, mal Ankündigung
+  * Keyword am Anfang für SEO, dann kreativ und passend zum Inhalt
+  * Jeder Titel soll einzigartig sein - KEINE festen Templates wiederholen
+
+  VERBOTEN (negative Clickbait - NIEMALS verwenden):
+  * "Braucht man das wirklich?" - skeptisch, demotivierend
+  * "Ja oder Nein?" - keine klare Aussage
+  * "Ist das die beste Lösung?" - weckt Zweifel
+  * "Lohnt sich das?" - negativer Unterton
+  * Rhetorische Fragen die Skepsis erzeugen
+  * Formulierungen die den Zuschauer verunsichern statt neugierig machen
+
+  WEITERE REGELN:
   * Nie benutz 'Im Short  zeige ich', 'Im Short wurde gezeigt', 'Im Video' usw.
   * Ich-Perspektive: Schreibe den gesamten Text aus der Ich-Perspektive ("Ich", "mein", "meine"). Entferne alle Verweise in der dritten Person wie "Roland Golla sagt" oder "sein Angebot".
   * Selbstbewusster & lösungsorientierter Ton: Stelle Probleme als Herausforderungen dar, die du persönlich siehst und löst. Präsentiere "Never Code Alone" nicht als eine mögliche Lösung, sondern als die entscheidende, effektive und überlegene Lösung, die das Problem aktiv behebt.
   * Einladende Diskussion: Formuliere direkte Aufforderungen zum Widerspruch (wie "Widersprecht mir gerne!") um, sodass sie kollaborativer und souveräner klingen (z. B. "Ich bin auch auf andere Perspektiven gespannt!" oder "Teilt eure Sichtweise!").
   * Starker Call to Action: Beende die Beschreibung mit einem starken, direkten und persönlichen Aufruf zum Handeln. Fordere die Zuschauer auf, dich, Roland Golla, direkt zu kontaktieren, um ihr spezifisches Problem zu lösen oder ihren Code zu reparieren. Mache deutlich, dass du derjenige bist, der handelt.
-  
+
   FÜR LANGE VIDEOS (mit Zeitangabe = Tutorials/Mehrwert):
-  * "[Hauptkeyword] Tutorial: Das musst du wissen"
-  * "[Hauptkeyword] erklärt: Der komplette Guide"
-  * "[Hauptkeyword] 2025: Alle wichtigen Features"
-  * "So funktioniert [Hauptkeyword] richtig"
-  * "[Hauptkeyword]: Von Anfänger zum Profi"
-  * "[Keyword A] vs [Keyword B]: Der ehrliche Vergleich"
-  * "Was niemand über [Hauptkeyword] sagt"
-  * "Der größte [Hauptkeyword] Mythos aufgedeckt"
-  
-- VERBOTEN bei Shorts: Zahlenangaben wie "3 Tipps", "5 Fehler" etc. (es werden nur Fragen gestellt!)
+  TITEL-RICHTLINIEN (flexibel formulieren):
+  * Ton: Tutorial-orientiert, informativ, einladend zum Lernen
+  * Fokus: Klarer Lerninhalt oder Vergleich
+  * Keyword am Anfang, dann kreativer Mehrwert-Hinweis
+  * Abwechslungsreich - nicht immer das gleiche Muster
+
+- VERBOTEN bei Shorts: Zahlenangaben wie "3 Tipps", "5 Fehler" etc.
 - NUR bei langen Videos mit nachweisbarem Inhalt: Zahlen verwenden wenn tatsächlich vorhanden
 - ABSOLUT KEINE Sonderzeichen wie (), &, #, ! - nur Buchstaben, Zahlen und Doppelpunkt
 - WICHTIG: Statt "&" IMMER "und" oder "+" schreiben! Beispiel: "Startups und Investments" NICHT "Startups & Investments"
@@ -346,20 +353,32 @@ ${GLOBAL_PROMPT_HELPERS.BRAND_NAMES}
 Transkript:
 ${transcript}
 
-WICHTIG: 
+WICHTIG:
 - Analysiere NUR den gegebenen Text. Verwende KEINE vordefinierten Listen oder Beispiele.
 - KORRIGIERE falsch geschriebene Markennamen gemäß der obigen Liste BEVOR du Keywords extrahierst
 - Wenn "Symphony" im Kontext von Programmierung/PHP vorkommt, korrigiere es zu "Symfony"
 - Behalte zusammengesetzte Begriffe bei (z.B. "Symphony AI" wird zu "Symfony AI")
 
+AUSSCHLIESSEN (NIEMALS als Keyword verwenden):
+- Kanalnamen und persönliche Marken: "Never Code Alone", "Roland Golla", "NCA"
+- YouTube-spezifische Begriffe: "Video", "YouTube", "Kanal", "Glocke", "Shorts"
+- Aufforderungen: "folgen", "einschalten", "abonnieren", "liken"
+- Allgemeine Wörter: "gut", "machen", "project", "Zukunft", "spektakulär"
+
 Identifiziere die wichtigsten Begriffe, die:
 - Tatsächlich im Transkript vorkommen (nach Korrektur der Markennamen)
 - Das Hauptthema repräsentieren
-- Als YouTube-Tags relevant wären
-- Spezifisch genug sind (keine allgemeinen Wörter wie "gut", "machen", "project")
-- Bevorzuge Markennamen und spezifische Technologien (z.B. "Claude 4", "Astro Framework", "Symfony AI")
+- Als YouTube-Tags relevant wären UND hohes Suchvolumen haben
+- Technische Begriffe sind (Programmiersprachen, Frameworks, Tools, AI-Konzepte)
+- Spezifisch genug sind für SEO-Relevanz
 
-Extrahiere die 3 relevantesten Keywords direkt aus dem Transkript-Inhalt.
+BEVORZUGE technische Keywords mit hohem Suchvolumen:
+- Programmiersprachen: PHP, JavaScript, TypeScript, Python
+- Frameworks: Symfony, Laravel, React, Vue.js, Astro
+- AI-Tools: Claude, ChatGPT, Gemini, AI Studio
+- Konzepte: Testing, Refactoring, DevOps, CI/CD
+
+Extrahiere die 3 relevantesten technischen Keywords direkt aus dem Transkript-Inhalt.
 
 Gib die Keywords in folgendem Format zurück:
 
