@@ -15,10 +15,17 @@ describe("ChatPrompts", () => {
       expect(msg).toContain(transcript);
     });
 
-    it("should request TRANSCRIPT and KEYWORDS sections", () => {
+    it("should request JSON with transcript and keywords fields", () => {
       const msg = ChatPrompts.createInitialMessage(transcript);
-      expect(msg).toContain("TRANSCRIPT:");
-      expect(msg).toContain("KEYWORDS:");
+      expect(msg).toContain("JSON-Objekt");
+      expect(msg).toContain('"transcript"');
+      expect(msg).toContain('"keywords"');
+    });
+
+    it("should not request section-header format", () => {
+      const msg = ChatPrompts.createInitialMessage(transcript);
+      expect(msg).not.toContain("TRANSCRIPT:");
+      expect(msg).not.toContain("KEYWORDS:");
     });
 
     it("should include transcript correction hints", () => {
@@ -27,48 +34,65 @@ describe("ChatPrompts", () => {
       expect(msg).toContain('"PHP"');
       expect(msg).toContain('"Sulu"');
     });
+
+    it("should include humanizer rules forbidding hyphens and AI patterns", () => {
+      const msg = ChatPrompts.createInitialMessage(transcript);
+      expect(msg).toContain("Bindestriche");
+      expect(msg).toContain("Schreibe wie ein Mensch");
+    });
   });
 
   describe("createPlatformMessage", () => {
-    it("should create short YouTube message without brand names", () => {
+    it("should create YouTube message requesting JSON with title and description fields", () => {
       const msg = ChatPrompts.createPlatformMessage("youtube");
-      expect(msg).toContain("TITLE:");
-      expect(msg).toContain("DESCRIPTION:");
+      expect(msg).toContain("JSON-Objekt");
+      expect(msg).toContain('"title"');
+      expect(msg).toContain('"description"');
+      expect(msg).not.toContain("TITLE:");
+      expect(msg).not.toContain("DESCRIPTION:");
       expect(msg).not.toContain("Never Code Alone");
     });
 
-    it("should include timestamps when videoDuration provided", () => {
+    it("should include timestamps field when videoDuration provided", () => {
       const msg = ChatPrompts.createPlatformMessage("youtube", { videoDuration: "7:16" });
-      expect(msg).toContain("TIMESTAMPS:");
+      expect(msg).toContain('"timestamps"');
       expect(msg).toContain("7:16");
     });
 
-    it("should not include timestamps without videoDuration", () => {
+    it("should not mention timestamps field without videoDuration", () => {
       const msg = ChatPrompts.createPlatformMessage("youtube");
-      expect(msg).not.toContain("TIMESTAMPS:");
+      expect(msg).not.toContain('"timestamps"');
     });
 
-    it("should create short LinkedIn message", () => {
+    it("should create LinkedIn message requesting JSON with linkedinPost field", () => {
       const msg = ChatPrompts.createPlatformMessage("linkedin");
-      expect(msg).toContain("LINKEDIN POST:");
+      expect(msg).toContain("JSON-Objekt");
+      expect(msg).toContain('"linkedinPost"');
+      expect(msg).not.toContain("LINKEDIN POST:");
       expect(msg).not.toContain("Never Code Alone");
     });
 
-    it("should create short Twitter message", () => {
+    it("should create short Twitter message requesting JSON with twitterPost field", () => {
       const msg = ChatPrompts.createPlatformMessage("twitter");
-      expect(msg).toContain("TWITTER POST:");
+      expect(msg).toContain("JSON-Objekt");
+      expect(msg).toContain('"twitterPost"');
+      expect(msg).not.toContain("TWITTER POST:");
       expect(msg.length).toBeLessThan(1000);
     });
 
-    it("should create short Instagram message", () => {
+    it("should create Instagram message with required hashtags", () => {
       const msg = ChatPrompts.createPlatformMessage("instagram");
-      expect(msg).toContain("INSTAGRAM POST:");
+      expect(msg).toContain("JSON-Objekt");
+      expect(msg).toContain('"instagramPost"');
       expect(msg).toContain("#nca #duisburg #ncatestify");
+      expect(msg).not.toContain("INSTAGRAM POST:");
     });
 
-    it("should create short TikTok message", () => {
+    it("should create TikTok message requesting JSON with tiktokPost field", () => {
       const msg = ChatPrompts.createPlatformMessage("tiktok");
-      expect(msg).toContain("TIKTOK POST:");
+      expect(msg).toContain("JSON-Objekt");
+      expect(msg).toContain('"tiktokPost"');
+      expect(msg).not.toContain("TIKTOK POST:");
     });
   });
 });

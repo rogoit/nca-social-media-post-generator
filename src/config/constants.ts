@@ -1,5 +1,14 @@
 import type { SocialMediaPlatform, PlatformConfig } from "../types/index.js";
 
+export const PLATFORM_PREFIXES: Record<SocialMediaPlatform, string> = {
+  youtube: "yt",
+  linkedin: "li",
+  twitter: "tw",
+  instagram: "ig",
+  tiktok: "tt",
+  keywords: "kw",
+} as const;
+
 export const VALIDATION_LIMITS = {
   MAX_KEYWORDS: 3,
 } as const;
@@ -18,12 +27,20 @@ const getGoogleModels = (): readonly string[] => {
   if (models) {
     return models.split(",").map((m: string) => m.trim());
   }
-  // Default models if not configured
   return ["gemini-2.5-pro", "gemini-2.5-flash"];
+};
+
+const getMistralModels = (): readonly string[] => {
+  const models = import.meta.env.MISTRAL_MODELS;
+  if (models) {
+    return models.split(",").map((m: string) => m.trim());
+  }
+  return ["mistral-large-latest"];
 };
 
 export const AI_MODELS = {
   google: getGoogleModels(),
+  mistral: getMistralModels(),
 } as const;
 
 export const PLATFORM_CONFIGS: Record<SocialMediaPlatform, PlatformConfig> = {

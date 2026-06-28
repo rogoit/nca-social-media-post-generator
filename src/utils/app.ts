@@ -1,5 +1,5 @@
 import type { SocialMediaPlatform } from "../types/index.js";
-import { UI_MESSAGES, ERROR_MESSAGES } from "../config/constants.js";
+import { UI_MESSAGES, ERROR_MESSAGES, PLATFORM_PREFIXES } from "../config/constants.js";
 import { validateTranscript, validateVideoDuration } from "./validation.js";
 import { generateContent, detectKeywords, ApiError } from "./api.js";
 import { KeywordManager } from "./keywords.js";
@@ -97,7 +97,7 @@ export class SocialMediaApp {
     ];
 
     platforms.forEach((platform) => {
-      const form = getElement<HTMLFormElement>(`${this.getPlatformPrefix(platform)}-form`);
+      const form = getElement<HTMLFormElement>(`${PLATFORM_PREFIXES[platform]}-form`);
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         this.handleFormSubmission(platform, form);
@@ -106,57 +106,23 @@ export class SocialMediaApp {
   }
 
   private setupCopyListeners(): void {
-    // YouTube copy buttons
-    const copyTranscriptBtn = getElement("copy-transcript-btn");
-    const copyTitleBtn = getElement("copy-title-btn");
-    const copyDescriptionBtn = getElement("copy-description-btn");
-    const copyTimestampsBtn = getElement("copy-timestamps-btn");
+    const copyPairs = [
+      { btnId: "copy-transcript-btn", contentId: "transcript-content" },
+      { btnId: "copy-title-btn", contentId: "title-content" },
+      { btnId: "copy-description-btn", contentId: "description-content" },
+      { btnId: "copy-timestamps-btn", contentId: "timestamps-content" },
+      { btnId: "copy-linkedin-btn", contentId: "linkedin-content-result" },
+      { btnId: "copy-twitter-btn", contentId: "twitter-content-result" },
+      { btnId: "copy-instagram-btn", contentId: "instagram-content-result" },
+      { btnId: "copy-tiktok-btn", contentId: "tiktok-content-result" },
+    ];
 
-    copyTranscriptBtn.addEventListener("click", () => {
-      const transcriptContent = getElement("transcript-content");
-      copyToClipboard(transcriptContent, copyTranscriptBtn);
-    });
-
-    copyTitleBtn.addEventListener("click", () => {
-      const titleContent = getElement("title-content");
-      copyToClipboard(titleContent, copyTitleBtn);
-    });
-
-    copyDescriptionBtn.addEventListener("click", () => {
-      const descriptionContent = getElement("description-content");
-      copyToClipboard(descriptionContent, copyDescriptionBtn);
-    });
-
-    copyTimestampsBtn.addEventListener("click", () => {
-      const timestampsContent = getElement("timestamps-content");
-      copyToClipboard(timestampsContent, copyTimestampsBtn);
-    });
-
-    // Other platform copy buttons
-    const copyLinkedinBtn = getElement("copy-linkedin-btn");
-    const copyTwitterBtn = getElement("copy-twitter-btn");
-    const copyInstagramBtn = getElement("copy-instagram-btn");
-    const copyTiktokBtn = getElement("copy-tiktok-btn");
-
-    copyLinkedinBtn.addEventListener("click", () => {
-      const linkedinContentResult = getElement("linkedin-content-result");
-      copyToClipboard(linkedinContentResult, copyLinkedinBtn);
-    });
-
-    copyTwitterBtn.addEventListener("click", () => {
-      const twitterContentResult = getElement("twitter-content-result");
-      copyToClipboard(twitterContentResult, copyTwitterBtn);
-    });
-
-    copyInstagramBtn.addEventListener("click", () => {
-      const instagramContentResult = getElement("instagram-content-result");
-      copyToClipboard(instagramContentResult, copyInstagramBtn);
-    });
-
-    copyTiktokBtn.addEventListener("click", () => {
-      const tiktokContentResult = getElement("tiktok-content-result");
-      copyToClipboard(tiktokContentResult, copyTiktokBtn);
-    });
+    for (const { btnId, contentId } of copyPairs) {
+      const btn = getElement(btnId);
+      btn.addEventListener("click", () => {
+        copyToClipboard(getElement(contentId), btn);
+      });
+    }
   }
 
   private handleTranscriptChange(): void {
@@ -219,7 +185,7 @@ export class SocialMediaApp {
 
     // Set transcript in hidden form field
     const hiddenTranscript = form.querySelector(
-      `#${this.getPlatformPrefix(platform)}-transcript`
+      `#${PLATFORM_PREFIXES[platform]}-transcript`
     ) as HTMLTextAreaElement;
     if (hiddenTranscript) {
       hiddenTranscript.value = transcript;
@@ -287,17 +253,5 @@ export class SocialMediaApp {
       setTextContent(this.detectKeywordsBtn, UI_MESSAGES.DETECT_KEYWORDS);
       this.detectKeywordsBtn.disabled = false;
     }
-  }
-
-  private getPlatformPrefix(platform: SocialMediaPlatform): string {
-    const prefixes: Record<SocialMediaPlatform, string> = {
-      youtube: "yt",
-      linkedin: "li",
-      twitter: "tw",
-      instagram: "ig",
-      tiktok: "tt",
-      keywords: "kw",
-    };
-    return prefixes[platform];
   }
 }

@@ -1,18 +1,13 @@
 import type { APIContext } from "astro";
 import { vi } from "vitest";
 
-/**
- * Creates mock Astro request for testing
- */
 export function createMockRequest(overrides?: {
   platform?: string;
   transcript?: string;
-  youtubeUrl?: string;
 }): Request {
   const body = {
     platform: overrides?.platform || "youtube",
     transcript: overrides?.transcript || "Sample transcript for testing",
-    youtubeUrl: overrides?.youtubeUrl,
   };
 
   return new Request("http://localhost:4321/api/generate", {
@@ -22,9 +17,6 @@ export function createMockRequest(overrides?: {
   });
 }
 
-/**
- * Creates mock Astro API context
- */
 export function createMockContext(request: Request): APIContext {
   return {
     request,
@@ -40,9 +32,6 @@ export function createMockContext(request: Request): APIContext {
   } as unknown as APIContext;
 }
 
-/**
- * Creates mock transcript of specified length
- */
 export function createMockTranscript(length: number): string {
   const words = [
     "innovation",
@@ -68,29 +57,16 @@ export function createMockTranscript(length: number): string {
   while (currentLength < length) {
     const word = words[Math.floor(Math.random() * words.length)];
     result.push(word);
-    currentLength += word.length + 1; // +1 for space
+    currentLength += word.length + 1;
   }
 
   return result.join(" ").substring(0, length);
 }
 
-/**
- * Creates mock AI response for testing
- */
-export function createMockAIResponse(platform: string, content?: string): any {
-  const defaultContent = content || `Sample ${platform} post content`;
-
-  // Gemini response format
-  if (platform === "gemini") {
-    return {
-      response: {
-        text: () => defaultContent,
-      },
-    };
-  }
-
-  // Claude response format
+export function createMockGeminiResponse(content?: string) {
   return {
-    content: [{ type: "text", text: defaultContent }],
+    response: {
+      text: () => content || "Sample response content",
+    },
   };
 }

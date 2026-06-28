@@ -1,7 +1,12 @@
 import { defineMiddleware } from "astro:middleware";
-import { getEnvVariable } from "./utils/envUtils";
 
 const PUBLIC_PATHS = ["/login", "/api/login", "/api/logout"];
+
+function getEnv(variable: string): string {
+  const value = import.meta.env[variable];
+  if (!value) throw new Error(`Environment variable ${variable} is not set`);
+  return value;
+}
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
@@ -22,7 +27,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const expectedToken = Buffer.from(
-    `${getEnvVariable("EDITOR_ADMIN")}:${getEnvVariable("EDITOR_PASSWORD")}`
+    `${getEnv("EDITOR_ADMIN")}:${getEnv("EDITOR_PASSWORD")}`
   ).toString("base64");
 
   if (authCookie.value !== expectedToken) {
