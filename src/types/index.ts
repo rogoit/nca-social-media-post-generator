@@ -56,36 +56,4 @@ export interface KeywordState {
   set: boolean;
 }
 
-export interface AppState {
-  transcriptProcessed: boolean;
-  currentPlatform: SocialMediaPlatform;
-  keywordState: KeywordState;
-}
 
-export interface CopyableContent {
-  element: HTMLElement;
-  button: HTMLElement;
-}
-
-export interface GenerateAllRequest {
-  transcript: string;
-  videoDuration?: string;
-}
-
-export interface PlatformResult {
-  title?: string;
-  description?: string;
-  timestamps?: string;
-  post?: string;
-}
-
-export interface GenerateAllResponse {
-  correctedTranscript: string;
-  keywords: string[];
-  youtube: PlatformResult;
-  linkedin: PlatformResult;
-  twitter: PlatformResult;
-  instagram: PlatformResult;
-  tiktok: PlatformResult;
-  modelUsed: string;
-}

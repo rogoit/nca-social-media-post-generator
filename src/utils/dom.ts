@@ -8,32 +8,12 @@ export function getElement<T extends HTMLElement>(id: string): T {
   return element;
 }
 
-export function getElements<T extends HTMLElement>(ids: string[]): T[] {
-  return ids.map((id) => getElement<T>(id));
-}
-
-export function toggleClass(element: HTMLElement, className: string, condition: boolean): void {
-  if (condition) {
-    element.classList.add(className);
-  } else {
-    element.classList.remove(className);
-  }
-}
-
 export function hideElement(element: HTMLElement): void {
   element.classList.add("hidden");
 }
 
 export function showElement(element: HTMLElement): void {
   element.classList.remove("hidden");
-}
-
-export function toggleElement(element: HTMLElement, show: boolean): void {
-  if (show) {
-    showElement(element);
-  } else {
-    hideElement(element);
-  }
 }
 
 export function setTextContent(element: HTMLElement, text: string): void {

@@ -2,6 +2,15 @@
 // NOTE: Validation logic must match src/utils/validation.ts (server is authoritative)
 // These are duplicated for client-side UX; server performs final validation
 
+export const PLATFORM_PREFIXES = {
+  youtube: "yt",
+  linkedin: "li",
+  twitter: "tw",
+  instagram: "ig",
+  tiktok: "tt",
+  keywords: "kw",
+};
+
 export const VALIDATION_LIMITS = {
   MAX_KEYWORDS: 3,
 };

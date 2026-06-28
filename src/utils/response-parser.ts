@@ -1,35 +1,27 @@
 import type { SocialMediaPlatform, GenerateResponse } from "../types/index.js";
 
-// Pre-compiled regex patterns for AI response parsing (avoid recompilation per request)
 const HASHTAG_PATTERN = /#[a-zA-Z0-9_äöüÄÖÜß]+/g;
 
-/**
- * Normalizes all hashtags in text to lowercase
- * e.g., "#VibeCoding #JavaScript" → "#vibecoding #javascript"
- */
+// Strip ALL hyphens and dashes (hyphen-minus, hyphen, non-breaking hyphen, figure dash,
+// en-dash, em-dash, horizontal bar, minus sign) and replace with a space, then collapse
+// resulting double spaces. Hard guarantee that no dash-like character reaches the output.
+function normalizeDashes(text: string): string {
+  return text.replace(/[\u002D\u2010-\u2015\u2212]/g, " ").replace(/ {2,}/g, " ");
+}
+
 function normalizeHashtags(text: string): string {
   return text.replace(HASHTAG_PATTERN, (hashtag) => hashtag.toLowerCase());
 }
 
-const PATTERNS = {
-  // YouTube sections
-  transcript: /TRANSCRIPT:\s*([\s\S]*?)(?=TITLE:|$)/,
-  title: /TITLE:\s*([\s\S]*?)(?=DESCRIPTION:|$)/,
-  description: /DESCRIPTION:\s*([\s\S]*?)(?=TIMESTAMPS:|$)/,
-  timestamps: /TIMESTAMPS:\s*([\s\S]*?)(?=$)/,
-  // Platform-specific posts
-  linkedin: /LINKEDIN POST:\s*([\s\S]*?)(?=$)/,
-  twitter: /TWITTER POST:\s*([\s\S]*?)(?=$)/,
-  instagram: /INSTAGRAM POST:\s*([\s\S]*?)(?=$)/,
-  tiktok: /TIKTOK POST:\s*([\s\S]*?)(?=$)/,
-  keywords: /KEYWORDS:\s*([\s\S]*?)(?=$)/,
-} as const;
+const HASHTAG_FIELDS = new Set<keyof GenerateResponse>([
+  "description",
+  "linkedinPost",
+  "twitterPost",
+  "instagramPost",
+  "tiktokPost",
+]);
 
 export class ResponseParser {
-  /**
-   * Validates that a parsed response contains meaningful content
-   * Returns an error message if validation fails, null if valid
-   */
   static validateResponse(type: SocialMediaPlatform, response: Partial<GenerateResponse>): string | null {
     switch (type) {
       case "youtube":
@@ -67,151 +59,37 @@ export class ResponseParser {
   }
 
   static parseResponse(type: SocialMediaPlatform, text: string): Partial<GenerateResponse> {
-    switch (type) {
-      case "youtube":
-        return this.parseYoutubeResponse(text);
-      case "linkedin":
-        return this.parseLinkedinResponse(text);
-      case "twitter":
-        return this.parseTwitterResponse(text);
-      case "instagram":
-        return this.parseInstagramResponse(text);
-      case "tiktok":
-        return this.parseTiktokResponse(text);
-      case "keywords":
-        return this.parseKeywordsResponse(text);
-      default:
-        throw new Error(`Unsupported platform type: ${type}`);
-    }
-  }
-
-  private static parseYoutubeResponse(text: string): Partial<GenerateResponse> {
-    const result: Partial<GenerateResponse> = {
-      transcript: "",
-      title: "",
-      description: "",
-    };
-
-    const transcriptMatch = text.match(PATTERNS.transcript);
-    if (transcriptMatch?.[1]) {
-      result.transcript = transcriptMatch[1].trim();
+    const parsed = this.safeParseJson(text);
+    if (!parsed) {
+      return {};
     }
 
-    const titleMatch = text.match(PATTERNS.title);
-    if (titleMatch?.[1]) {
-      result.title = titleMatch[1].trim();
+    const target = parsed as Record<string, unknown>;
+
+    for (const [field, value] of Object.entries(parsed)) {
+      if (typeof value === "string") {
+        let normalized = normalizeDashes(value);
+        if (HASHTAG_FIELDS.has(field as keyof GenerateResponse)) {
+          normalized = normalizeHashtags(normalized);
+        }
+        target[field] = normalized;
+      }
+      if (Array.isArray(value)) {
+        target[field] = value.map((item) =>
+          typeof item === "string" ? normalizeDashes(item) : item
+        );
+      }
     }
 
-    const descriptionMatch = text.match(PATTERNS.description);
-    if (descriptionMatch?.[1]) {
-      result.description = normalizeHashtags(descriptionMatch[1].trim());
+    return parsed;
+  }
+
+  private static safeParseJson(text: string): Partial<GenerateResponse> | null {
+    try {
+      return JSON.parse(text) as Partial<GenerateResponse>;
+    } catch {
+      console.error("Failed to parse AI JSON response:", text.slice(0, 200));
+      return null;
     }
-
-    const timestampsMatch = text.match(PATTERNS.timestamps);
-    if (timestampsMatch?.[1]) {
-      result.timestamps = timestampsMatch[1].trim();
-    }
-
-    return result;
-  }
-
-  private static parseLinkedinResponse(text: string): Partial<GenerateResponse> {
-    const result: Partial<GenerateResponse> = {
-      linkedinPost: "",
-    };
-
-    const linkedinMatch = text.match(PATTERNS.linkedin);
-    if (linkedinMatch?.[1]) {
-      result.linkedinPost = normalizeHashtags(linkedinMatch[1].trim());
-    }
-
-    return result;
-  }
-
-  private static parseTwitterResponse(text: string): Partial<GenerateResponse> {
-    const result: Partial<GenerateResponse> = {
-      twitterPost: "",
-    };
-
-    const twitterMatch = text.match(PATTERNS.twitter);
-    if (twitterMatch?.[1]) {
-      result.twitterPost = normalizeHashtags(twitterMatch[1].trim());
-    }
-
-    return result;
-  }
-
-  private static parseInstagramResponse(text: string): Partial<GenerateResponse> {
-    const result: Partial<GenerateResponse> = {
-      instagramPost: "",
-    };
-
-    const instagramMatch = text.match(PATTERNS.instagram);
-    if (instagramMatch?.[1]) {
-      result.instagramPost = normalizeHashtags(instagramMatch[1].trim());
-    }
-
-    return result;
-  }
-
-  private static parseTiktokResponse(text: string): Partial<GenerateResponse> {
-    const result: Partial<GenerateResponse> = {
-      tiktokPost: "",
-    };
-
-    const tiktokMatch = text.match(PATTERNS.tiktok);
-    if (tiktokMatch?.[1]) {
-      result.tiktokPost = normalizeHashtags(tiktokMatch[1].trim());
-    }
-
-    return result;
-  }
-
-  private static parseKeywordsResponse(text: string): Partial<GenerateResponse> {
-    const result: Partial<GenerateResponse> = {
-      keywords: [],
-    };
-
-    const keywordsMatch = text.match(PATTERNS.keywords);
-    if (keywordsMatch?.[1]) {
-      const keywordsText = keywordsMatch[1].trim();
-      const keywords = keywordsText
-        .split("\n")
-        .map((line) => line.trim())
-        // Remove numbering like "1.", "2.", "3." or "1:", "2:", etc.
-        .map((line) => line.replace(/^\d+[\.\:\)]\s*/, ""))
-        .filter((line) => line.length > 0)
-        .slice(0, 3);
-
-      result.keywords = keywords;
-    }
-
-    return result;
-  }
-
-  // Instance methods for tests
-  parseYouTubeResponse(text: string): Partial<GenerateResponse> {
-    return ResponseParser.parseResponse("youtube", text);
-  }
-
-  parseLinkedInResponse(text: string): Partial<GenerateResponse> {
-    return ResponseParser.parseResponse("linkedin", text);
-  }
-
-  parseTwitterResponse(text: string): Partial<GenerateResponse> {
-    return ResponseParser.parseResponse("twitter", text);
-  }
-
-  parseInstagramResponse(text: string): Partial<GenerateResponse> {
-    return ResponseParser.parseResponse("instagram", text);
-  }
-
-  parseTikTokResponse(text: string): Partial<GenerateResponse> {
-    return ResponseParser.parseResponse("tiktok", text);
-  }
-
-  parseKeywordsResponse(text: string): string[] {
-    const result = ResponseParser.parseResponse("keywords", text);
-    return result.keywords || [];
   }
 }

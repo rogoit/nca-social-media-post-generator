@@ -1,26 +1,48 @@
 import type { APIRoute } from "astro";
-import type { GenerateAllResponse } from "../../types/index.js";
 import { validateVideoFile } from "../../utils/validation.js";
-import { GoogleGeminiProvider } from "../../utils/ai-providers.js";
+import { GoogleGeminiProvider, MistralProvider } from "../../utils/ai-providers.js";
 import { ChatPrompts } from "../../config/chat-prompts.js";
 import { ResponseParser } from "../../utils/response-parser.js";
+import {
+  TRANSCRIPT_RESPONSE_FORMAT,
+  getYoutubeResponseFormat,
+  LINKEDIN_RESPONSE_FORMAT,
+  TWITTER_RESPONSE_FORMAT,
+  INSTAGRAM_RESPONSE_FORMAT,
+  TIKTOK_RESPONSE_FORMAT,
+} from "../../config/schemas.js";
+import { jsonResponse } from "../../utils/api-helpers.js";
 
 const GOOGLE_GEMINI_API_KEY = import.meta.env.GOOGLE_GEMINI_API_KEY;
+const MISTRAL_API_KEY = import.meta.env.MISTRAL_API_KEY;
 
 let geminiProvider: GoogleGeminiProvider;
+let mistralProvider: MistralProvider;
 
 try {
   if (GOOGLE_GEMINI_API_KEY) {
     geminiProvider = new GoogleGeminiProvider(GOOGLE_GEMINI_API_KEY);
   }
+  if (MISTRAL_API_KEY) {
+    mistralProvider = new MistralProvider(MISTRAL_API_KEY);
+  }
 } catch (error) {
-  console.error("Failed to initialize AI provider for video:", error);
+  console.error("Failed to initialize AI providers:", error);
 }
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     if (!geminiProvider) {
-      return jsonResponse({ error: "AI-Dienste nicht verfügbar." }, 503);
+      return jsonResponse(
+        { error: "Video-Verarbeitung nicht verfügbar. Bitte GOOGLE_GEMINI_API_KEY prüfen." },
+        503
+      );
+    }
+    if (!mistralProvider) {
+      return jsonResponse(
+        { error: "Text-Generierung nicht verfügbar. Bitte MISTRAL_API_KEY prüfen." },
+        503
+      );
     }
 
     // Parse multipart form data
@@ -51,12 +73,15 @@ export const POST: APIRoute = async ({ request }) => {
       videoFile.type
     );
 
-    // Step 2: Use chat session to correct transcript + generate all platforms
-    geminiProvider.startChatSession();
+    // Step 2: Use Mistral chat session to correct transcript + generate all platforms
+    mistralProvider.startChatSession();
 
     // Turn 1: Correct transcript + extract keywords
     const initialMessage = ChatPrompts.createInitialMessage(rawTranscript);
-    const { text: initialText, model } = await geminiProvider.sendChatMessage(initialMessage);
+    const { text: initialText, model } = await mistralProvider.sendChatMessage(
+      initialMessage,
+      TRANSCRIPT_RESPONSE_FORMAT
+    );
 
     const transcriptResult = ResponseParser.parseResponse("youtube", initialText);
     const keywordResult = ResponseParser.parseResponse("keywords", initialText);
@@ -65,27 +90,27 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Turn 2: YouTube
     const ytMsg = ChatPrompts.createPlatformMessage("youtube");
-    const { text: ytText } = await geminiProvider.sendChatMessage(ytMsg);
+    const { text: ytText } = await mistralProvider.sendChatMessage(ytMsg, getYoutubeResponseFormat());
     const ytResult = ResponseParser.parseResponse("youtube", ytText);
 
     // Turn 3: LinkedIn
     const liMsg = ChatPrompts.createPlatformMessage("linkedin");
-    const { text: liText } = await geminiProvider.sendChatMessage(liMsg);
+    const { text: liText } = await mistralProvider.sendChatMessage(liMsg, LINKEDIN_RESPONSE_FORMAT);
     const liResult = ResponseParser.parseResponse("linkedin", liText);
 
     // Turn 4: Twitter
     const twMsg = ChatPrompts.createPlatformMessage("twitter");
-    const { text: twText } = await geminiProvider.sendChatMessage(twMsg);
+    const { text: twText } = await mistralProvider.sendChatMessage(twMsg, TWITTER_RESPONSE_FORMAT);
     const twResult = ResponseParser.parseResponse("twitter", twText);
 
     // Turn 5: Instagram
     const igMsg = ChatPrompts.createPlatformMessage("instagram");
-    const { text: igText } = await geminiProvider.sendChatMessage(igMsg);
+    const { text: igText } = await mistralProvider.sendChatMessage(igMsg, INSTAGRAM_RESPONSE_FORMAT);
     const igResult = ResponseParser.parseResponse("instagram", igText);
 
     // Turn 6: TikTok
     const ttMsg = ChatPrompts.createPlatformMessage("tiktok");
-    const { text: ttText } = await geminiProvider.sendChatMessage(ttMsg);
+    const { text: ttText } = await mistralProvider.sendChatMessage(ttMsg, TIKTOK_RESPONSE_FORMAT);
     const ttResult = ResponseParser.parseResponse("tiktok", ttText);
 
     // Return in format compatible with video upload UI
@@ -110,10 +135,3 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 };
-
-function jsonResponse(data: any, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}

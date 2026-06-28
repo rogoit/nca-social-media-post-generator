@@ -1,6 +1,3 @@
-/**
- * Sample transcripts for testing
- */
 export const sampleTranscripts = {
   short: "This is a short transcript about digital transformation.",
 
@@ -31,38 +28,27 @@ export const sampleTranscripts = {
   edgeCase: 'Special chars: @#$% & émojis 🚀 and "quotes" with newlines\n\ntest',
 };
 
-/**
- * Sample AI responses for different platforms
- */
 export const sampleAIResponses = {
   youtube: `
-📌 Transforming Business Through Cloud Technology
+TRANSCRIPT:
+Welcome to our podcast about digital innovation.
 
+TITLE:
+Digital Innovation Podcast - Cloud Technology Insights
+
+DESCRIPTION:
 Join us as we explore how modern enterprises are leveraging cloud solutions
 to revolutionize their operations. Learn from industry leaders with 20+ years
 of experience about best practices, challenges, and real-world success stories.
 
-🔑 Key Topics:
-• Cloud migration strategies
-• Digital innovation frameworks
-• Customer experience optimization
-
-#DigitalTransformation #CloudComputing #Innovation #BusinessStrategy
-  `.trim(),
-
-  facebook: `
-We're excited to share insights on digital transformation! 🚀
-
-In our latest discussion, we explore how businesses are using cloud technology
-to transform operations and deliver better customer experiences.
-
-What challenges has your organization faced in digital transformation?
-Share your experiences below! 👇
-
-#DigitalTransformation #BusinessInnovation #TechLeadership
-  `.trim(),
+TIMESTAMPS:
+0:00 Introduction
+3:30 Cloud Migration Strategies
+7:00 Best Practices
+`.trim(),
 
   linkedin: `
+LINKEDIN POST:
 🎯 The Future of Digital Transformation
 
 In today's rapidly evolving business landscape, organizations must adapt
@@ -70,48 +56,22 @@ or risk falling behind. Our latest conversation explores how forward-thinking
 enterprises are leveraging cloud technology and data analytics to drive
 meaningful transformation.
 
-Key insights from this discussion:
-
-→ Digital transformation is fundamentally about culture, not just technology
-→ Successful initiatives require executive buy-in and cross-functional collaboration
-→ Customer experience must remain at the center of transformation efforts
-
 What's been your biggest learning from leading digital initiatives?
 
-#DigitalTransformation #BusinessStrategy #Innovation #Leadership #Technology
-  `.trim(),
+#DigitalTransformation #BusinessStrategy
+`.trim(),
 
   instagram: `
+INSTAGRAM POST:
 🚀 Digital transformation isn't just tech - it's reimagining how we deliver value.
 
-Today's discussion covers:
-✨ Cloud migration strategies
-✨ Data-driven decision making
-✨ Building innovation culture
-
-What aspect of digital transformation interests you most?
-
-#DigitalTransformation #Innovation #BusinessGrowth #TechTrends #Leadership
-  `.trim(),
+#nca #duisburg #ncatestify #DigitalTransformation #Innovation
+`.trim(),
 };
 
-/**
- * Expected parsed responses by platform
- */
-export const expectedParsedContent = {
-  youtube: sampleAIResponses.youtube,
-  facebook: sampleAIResponses.facebook,
-  linkedin: sampleAIResponses.linkedin,
-  instagram: sampleAIResponses.instagram,
-};
-
-/**
- * Invalid input scenarios
- */
 export const invalidInputs = {
   emptyTranscript: "",
   tooShort: "too short",
   missingPlatform: { transcript: "valid transcript" },
   invalidPlatform: { platform: "invalid", transcript: "valid transcript" },
-  tooLong: "a".repeat(50001),
 };

@@ -58,16 +58,16 @@ The project is under **MIT license** and open for contributions. You can support
    - Create a `.env` file with your API keys:
      ```
      GOOGLE_GEMINI_API_KEY=your-key-here
-     ANTHROPIC_API_KEY=your-key-here
+     MISTRAL_API_KEY=your-key-here
      N8N_WEBHOOK_URL=your-n8n-webhook-url
      ```
    - Optional: Customize AI models (comma-separated, tries in order):
      ```
      GOOGLE_GEMINI_MODELS=gemini-2.5-pro,gemini-2.5-flash
-     ANTHROPIC_MODELS=claude-3-haiku-20240307,claude-3-sonnet-20240229
+     MISTRAL_MODELS=mistral-large-latest
      ```
-   - To obtain an Anthropic API key:
-     1. Visit [Anthropic's website](https://console.anthropic.com/)
+   - To obtain a Mistral API key:
+     1. Visit [Mistral's console](https://console.mistral.ai/)
      2. Sign up or log in to your account
      3. Navigate to the API keys section
      4. Create a new API key

@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { jsonResponse } from "../../utils/api-helpers.js";
 
 export const POST: APIRoute = async ({ request }) => {
   const N8N_WEBHOOK_URL = import.meta.env.N8N_WEBHOOK_URL;
@@ -47,10 +48,3 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 };
-
-function jsonResponse(data: any, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}

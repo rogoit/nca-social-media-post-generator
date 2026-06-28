@@ -3,305 +3,119 @@ import { ResponseParser } from "../../src/utils/response-parser.js";
 
 describe("ResponseParser", () => {
   describe("parseResponse", () => {
-    it("should parse YouTube response correctly", () => {
-      const mockResponse = `
-TRANSCRIPT:
-This is the corrected transcript with proper punctuation.
-
-TITLE:
-JavaScript 2025: Die wichtigste Frage
-
-DESCRIPTION:
-JavaScript bleibt auch 2025 eine der wichtigsten Programmiersprachen. Die Entwicklung geht schnell voran und neue Features kommen regelmäßig dazu. 
-
-Was sind eure Erfahrungen mit den neuesten JavaScript-Features? Nutzt ihr bereits ES2024-Features in euren Projekten?
-
-Teilt eure Meinung in den Kommentaren! Ich bin gespannt auf eure Perspektiven zu JavaScript 2025.
-
-TIMESTAMPS:
-0:00 JavaScript 2025 Überblick
-2:30 Neue ES2024 Features
-5:00 Performance Verbesserungen
-`;
+    it("should parse YouTube JSON response correctly", () => {
+      const mockResponse = JSON.stringify({
+        transcript: "This is the corrected transcript with proper punctuation.",
+        title: "JavaScript 2025: Die wichtigste Frage",
+        description:
+          "JavaScript bleibt auch 2025 eine der wichtigsten Programmiersprachen.",
+        timestamps: [
+          "0:00 JavaScript 2025 Überblick",
+          "2:30 Neue ES2024 Features",
+          "5:00 Performance Verbesserungen",
+        ],
+      });
 
       const result = ResponseParser.parseResponse("youtube", mockResponse);
 
-      expect(result.transcript).toBe("This is the corrected transcript with proper punctuation.");
+      expect(result.transcript).toBe(
+        "This is the corrected transcript with proper punctuation."
+      );
       expect(result.title).toBe("JavaScript 2025: Die wichtigste Frage");
       expect(result.description).toContain("JavaScript bleibt auch 2025");
       expect(result.timestamps).toContain("0:00 JavaScript 2025 Überblick");
     });
 
-    it("should parse YouTube response without timestamps", () => {
-      const mockResponse = `
-TRANSCRIPT:
-Short transcript here.
-
-TITLE:
-Short Video Title
-
-DESCRIPTION:
-This is a description without timestamps.
-`;
+    it("should parse YouTube JSON response without timestamps", () => {
+      const mockResponse = JSON.stringify({
+        title: "Short Video Title",
+        description: "This is a description without timestamps.",
+      });
 
       const result = ResponseParser.parseResponse("youtube", mockResponse);
 
-      expect(result.transcript).toBe("Short transcript here.");
       expect(result.title).toBe("Short Video Title");
       expect(result.description).toBe("This is a description without timestamps.");
       expect(result.timestamps).toBeUndefined();
     });
 
-    it("should parse LinkedIn response correctly", () => {
-      const mockResponse = `
-LINKEDIN POST:
-Heute möchte ich über JavaScript sprechen. Die Sprache entwickelt sich kontinuierlich weiter und bietet immer neue Möglichkeiten.
-
-Was sind eure liebsten JavaScript-Features in 2025?
-
-#javascript #webdev #programming #frontend #nodejs
-`;
+    it("should parse LinkedIn JSON response correctly", () => {
+      const mockResponse = JSON.stringify({
+        linkedinPost:
+          "Heute möchte ich über JavaScript sprechen. #javascript #webdev",
+      });
 
       const result = ResponseParser.parseResponse("linkedin", mockResponse);
 
       expect(result.linkedinPost).toContain("JavaScript sprechen");
-      expect(result.linkedinPost).toContain("#javascript #webdev");
     });
 
-    it("should parse Twitter response correctly", () => {
-      const mockResponse = `
-TWITTER POST:
-JavaScript 2025 bringt spannende neue Features! Welche nutzt ihr bereits? #javascript #webdev
-`;
+    it("should parse Twitter JSON response correctly", () => {
+      const mockResponse = JSON.stringify({
+        twitterPost: "JavaScript 2025 bringt spannende neue Features! #javascript #webdev",
+      });
 
       const result = ResponseParser.parseResponse("twitter", mockResponse);
 
       expect(result.twitterPost).toContain("JavaScript 2025 bringt");
-      expect(result.twitterPost).toContain("#javascript #webdev");
     });
 
-    it("should parse Instagram response correctly", () => {
-      const mockResponse = `
-INSTAGRAM POST:
-JavaScript bleibt 2025 unverzichtbar für Webentwickler.
-
-Die neuen Features in ES2024 sind beeindruckend. Welche Features nutzt ihr am liebsten?
-
-#nca #duisburg #ncatestify #javascript #webdev #programming #coding #frontend #nodejs #reactjs
-`;
+    it("should parse Instagram JSON response correctly", () => {
+      const mockResponse = JSON.stringify({
+        instagramPost:
+          "JavaScript bleibt 2025 unverzichtbar. #nca #duisburg #ncatestify",
+      });
 
       const result = ResponseParser.parseResponse("instagram", mockResponse);
 
       expect(result.instagramPost).toContain("JavaScript bleibt 2025");
-      expect(result.instagramPost).toContain("#nca #duisburg #ncatestify");
     });
 
-    it("should parse TikTok response correctly", () => {
-      const mockResponse = `
-TIKTOK POST:
-JavaScript Tipp für 2025:
-
-Nutzt die neuen Array-Methods! Sie machen euren Code cleaner.
-
-#programming #javascript #coding #webdev #techtok #learnontiktok
-`;
+    it("should parse TikTok JSON response correctly", () => {
+      const mockResponse = JSON.stringify({
+        tiktokPost: "JavaScript Tipp für 2025: #programming #javascript",
+      });
 
       const result = ResponseParser.parseResponse("tiktok", mockResponse);
 
       expect(result.tiktokPost).toContain("JavaScript Tipp");
-      expect(result.tiktokPost).toContain("#programming #javascript");
     });
 
-    it("should parse keywords response correctly", () => {
-      const mockResponse = `
-KEYWORDS:
-JavaScript
-React
-TypeScript
-`;
+    it("should parse keywords JSON response correctly", () => {
+      const mockResponse = JSON.stringify({
+        transcript: "Some transcript.",
+        keywords: ["JavaScript", "React", "TypeScript"],
+      });
 
       const result = ResponseParser.parseResponse("keywords", mockResponse);
 
       expect(result.keywords).toEqual(["JavaScript", "React", "TypeScript"]);
     });
 
-    it("should limit keywords to maximum of 3", () => {
-      const mockResponse = `
-KEYWORDS:
-JavaScript
-React
-TypeScript
-Vue.js
-Angular
-`;
-
-      const result = ResponseParser.parseResponse("keywords", mockResponse);
-
-      expect(result.keywords).toHaveLength(3);
-      expect(result.keywords).toEqual(["JavaScript", "React", "TypeScript"]);
-    });
-
-    it("should handle keywords with empty lines", () => {
-      const mockResponse = `
-KEYWORDS:
-JavaScript
-
-React
-
-
-TypeScript
-
-`;
-
-      const result = ResponseParser.parseResponse("keywords", mockResponse);
-
-      expect(result.keywords).toEqual(["JavaScript", "React", "TypeScript"]);
-    });
-
-    it("should strip numbering from keywords", () => {
-      const mockResponse = `
-KEYWORDS:
-1. ChatGPT
-2. Stack Overflow
-3. KI
-`;
-
-      const result = ResponseParser.parseResponse("keywords", mockResponse);
-
-      expect(result.keywords).toEqual(["ChatGPT", "Stack Overflow", "KI"]);
-    });
-
-    it("should strip various numbering formats from keywords", () => {
-      const mockResponse = `
-KEYWORDS:
-1: PHP
-2) Symfony
-3. Testing
-`;
-
-      const result = ResponseParser.parseResponse("keywords", mockResponse);
-
-      expect(result.keywords).toEqual(["PHP", "Symfony", "Testing"]);
-    });
-
-    it("should handle malformed responses gracefully", () => {
-      const malformedResponse = "This is not a properly formatted response";
+    it("should return empty object for malformed (non-JSON) responses", () => {
+      const malformedResponse = "This is not JSON";
 
       const result = ResponseParser.parseResponse("youtube", malformedResponse);
 
-      expect(result.transcript).toBe("");
-      expect(result.title).toBe("");
-      expect(result.description).toBe("");
-    });
-
-    it("should handle partial YouTube responses", () => {
-      const partialResponse = `
-TITLE:
-Only Title Present
-`;
-
-      const result = ResponseParser.parseResponse("youtube", partialResponse);
-
-      expect(result.transcript).toBe("");
-      expect(result.title).toBe("Only Title Present");
-      expect(result.description).toBe("");
-    });
-
-    it("should throw error for unsupported platform type", () => {
-      expect(() => {
-        ResponseParser.parseResponse("unsupported" as any, "test response");
-      }).toThrow("Unsupported platform type: unsupported");
+      expect(result.transcript).toBeUndefined();
+      expect(result.title).toBeUndefined();
+      expect(result.description).toBeUndefined();
     });
 
     it("should handle empty responses", () => {
-      const emptyResponse = "";
+      const result = ResponseParser.parseResponse("youtube", "");
+      expect(result).toEqual({});
 
-      const youtubeResult = ResponseParser.parseResponse("youtube", emptyResponse);
-      expect(youtubeResult.transcript).toBe("");
-      expect(youtubeResult.title).toBe("");
-      expect(youtubeResult.description).toBe("");
-
-      const keywordsResult = ResponseParser.parseResponse("keywords", emptyResponse);
-      expect(keywordsResult.keywords).toEqual([]);
-    });
-
-    it("should trim whitespace from parsed content", () => {
-      const responseWithWhitespace = `
-TRANSCRIPT:
-   This transcript has extra whitespace
-
-TITLE:
-   Title with whitespace
-
-DESCRIPTION:
-   Description with whitespace
-`;
-
-      const result = ResponseParser.parseResponse("youtube", responseWithWhitespace);
-
-      expect(result.transcript).toBe("This transcript has extra whitespace");
-      expect(result.title).toBe("Title with whitespace");
-      expect(result.description).toBe("Description with whitespace");
-    });
-
-    it("should normalize hashtags to lowercase in LinkedIn posts", () => {
-      const mockResponse = `
-LINKEDIN POST:
-Check out this #VibeCoding session! #JavaScript #WebDev #NeverCodeAlone
-`;
-
-      const result = ResponseParser.parseResponse("linkedin", mockResponse);
-
-      expect(result.linkedinPost).toContain("#vibecoding");
-      expect(result.linkedinPost).toContain("#javascript");
-      expect(result.linkedinPost).toContain("#webdev");
-      expect(result.linkedinPost).toContain("#nevercodealone");
-      expect(result.linkedinPost).not.toContain("#VibeCoding");
-    });
-
-    it("should normalize hashtags to lowercase in Twitter posts", () => {
-      const mockResponse = `
-TWITTER POST:
-New tutorial on #ReactJS and #TypeScript! #CodingTips
-`;
-
-      const result = ResponseParser.parseResponse("twitter", mockResponse);
-
-      expect(result.twitterPost).toContain("#reactjs");
-      expect(result.twitterPost).toContain("#typescript");
-      expect(result.twitterPost).toContain("#codingtips");
-      expect(result.twitterPost).not.toContain("#ReactJS");
-    });
-
-    it("should normalize hashtags to lowercase in Instagram posts", () => {
-      const mockResponse = `
-INSTAGRAM POST:
-Amazing coding session today!
-
-#NCA #Duisburg #NCATestify #JavaScript #WebDev #Programming
-`;
-
-      const result = ResponseParser.parseResponse("instagram", mockResponse);
-
-      expect(result.instagramPost).toContain("#nca");
-      expect(result.instagramPost).toContain("#duisburg");
-      expect(result.instagramPost).toContain("#ncatestify");
-      expect(result.instagramPost).toContain("#javascript");
-      expect(result.instagramPost).not.toContain("#NCA");
-      expect(result.instagramPost).not.toContain("#JavaScript");
+      const keywordsResult = ResponseParser.parseResponse("keywords", "");
+      expect(keywordsResult.keywords).toBeUndefined();
     });
 
     it("should normalize hashtags to lowercase in YouTube descriptions", () => {
-      const mockResponse = `
-TRANSCRIPT:
-Heute zeige ich euch Vibe Coding mit Claude.
-
-TITLE:
-Vibe Coding mit Claude: So funktioniert es
-
-DESCRIPTION:
-Vibe Coding ist der neue Trend. #VibeCoding #JavaScript #WebDev
-`;
+      const mockResponse = JSON.stringify({
+        transcript: "Heute zeige ich euch Vibe Coding mit Claude.",
+        title: "Vibe Coding mit Claude: So funktioniert es",
+        description: "Vibe Coding ist der neue Trend. #VibeCoding #JavaScript #WebDev",
+      });
 
       const result = ResponseParser.parseResponse("youtube", mockResponse);
 
@@ -312,20 +126,139 @@ Vibe Coding ist der neue Trend. #VibeCoding #JavaScript #WebDev
       expect(result.description).not.toContain("#JavaScript");
     });
 
-    it("should normalize hashtags to lowercase in TikTok posts", () => {
-      const mockResponse = `
-TIKTOK POST:
-Quick coding tip for you!
+    it("should normalize hashtags to lowercase in LinkedIn posts", () => {
+      const mockResponse = JSON.stringify({
+        linkedinPost: "Check out this #VibeCoding session! #JavaScript #WebDev",
+      });
 
-#TechTok #LearnOnTikTok #CodingLife #DevLife
-`;
+      const result = ResponseParser.parseResponse("linkedin", mockResponse);
+
+      expect(result.linkedinPost).toContain("#vibecoding");
+      expect(result.linkedinPost).toContain("#javascript");
+      expect(result.linkedinPost).not.toContain("#VibeCoding");
+    });
+
+    it("should normalize hashtags to lowercase in Twitter posts", () => {
+      const mockResponse = JSON.stringify({
+        twitterPost: "New tutorial on #ReactJS and #TypeScript! #CodingTips",
+      });
+
+      const result = ResponseParser.parseResponse("twitter", mockResponse);
+
+      expect(result.twitterPost).toContain("#reactjs");
+      expect(result.twitterPost).toContain("#typescript");
+      expect(result.twitterPost).not.toContain("#ReactJS");
+    });
+
+    it("should normalize hashtags to lowercase in Instagram posts", () => {
+      const mockResponse = JSON.stringify({
+        instagramPost: "Amazing coding session! #NCA #Duisburg #JavaScript #WebDev",
+      });
+
+      const result = ResponseParser.parseResponse("instagram", mockResponse);
+
+      expect(result.instagramPost).toContain("#nca");
+      expect(result.instagramPost).toContain("#duisburg");
+      expect(result.instagramPost).toContain("#javascript");
+      expect(result.instagramPost).not.toContain("#NCA");
+    });
+
+    it("should normalize hashtags to lowercase in TikTok posts", () => {
+      const mockResponse = JSON.stringify({
+        tiktokPost: "Quick coding tip! #TechTok #LearnOnTikTok #CodingLife",
+      });
 
       const result = ResponseParser.parseResponse("tiktok", mockResponse);
 
       expect(result.tiktokPost).toContain("#techtok");
       expect(result.tiktokPost).toContain("#learnontiktok");
-      expect(result.tiktokPost).toContain("#codinglife");
       expect(result.tiktokPost).not.toContain("#TechTok");
+    });
+
+    it("should NOT normalize hashtags in transcript field", () => {
+      const mockResponse = JSON.stringify({
+        transcript: "Original text with #CamelCaseTag should be preserved",
+      });
+
+      const result = ResponseParser.parseResponse("youtube", mockResponse);
+
+      expect(result.transcript).toContain("#CamelCaseTag");
+    });
+
+    it("should strip en-dash (–) and em-dash (—) from all string fields", () => {
+      const mockResponse = JSON.stringify({
+        transcript: "Text mit – Einschub – und Gedanken",
+        title: "Titel – mit Gedankenstrich",
+        description: "Beschreibung — mit Em-Dash",
+      });
+
+      const result = ResponseParser.parseResponse("youtube", mockResponse);
+
+      expect(result.transcript).not.toContain("\u2013");
+      expect(result.transcript).not.toContain("\u2014");
+      expect(result.transcript).toBe("Text mit Einschub und Gedanken");
+      expect(result.title).toBe("Titel mit Gedankenstrich");
+      expect(result.description).toBe("Beschreibung mit Em Dash");
+    });
+
+    it("should strip ALL hyphens including compound-word hyphens", () => {
+      const mockResponse = JSON.stringify({
+        transcript: "Web-Entwicklung und E-Commerce sind wichtig",
+        title: "Cross-Platform-Titel",
+      });
+
+      const result = ResponseParser.parseResponse("youtube", mockResponse);
+
+      expect(result.transcript).toBe("Web Entwicklung und E Commerce sind wichtig");
+      expect(result.title).toBe("Cross Platform Titel");
+      expect(result.transcript).not.toContain("-");
+      expect(result.title).not.toContain("-");
+    });
+
+    it("should strip en-dash from keyword array entries", () => {
+      const mockResponse = JSON.stringify({
+        transcript: "x",
+        keywords: ["AI – PHP", "Symfony — Tools", "clean-keyword"],
+      });
+
+      const result = ResponseParser.parseResponse("keywords", mockResponse);
+
+      expect(result.keywords).toEqual(["AI PHP", "Symfony Tools", "clean keyword"]);
+      expect(result.keywords?.some((k) => /[\u002D\u2013\u2014]/.test(k))).toBe(false);
+    });
+
+    it("should strip en-dash from platform posts", () => {
+      const mockResponse = JSON.stringify({
+        linkedinPost: "Post – mit – vielen – Strichen",
+        twitterPost: "Tweet — test",
+      });
+
+      const result = ResponseParser.parseResponse("linkedin", mockResponse);
+
+      expect(result.linkedinPost).toBe("Post mit vielen Strichen");
+      expect(result.linkedinPost).not.toContain("\u2013");
+    });
+  });
+
+  describe("validateResponse", () => {
+    it("should validate YouTube response requires title and description", () => {
+      expect(ResponseParser.validateResponse("youtube", { title: "T", description: "D" })).toBeNull();
+      expect(ResponseParser.validateResponse("youtube", { title: "", description: "D" })).not.toBeNull();
+      expect(ResponseParser.validateResponse("youtube", { title: "T" })).not.toBeNull();
+    });
+
+    it("should validate keywords response requires keywords", () => {
+      expect(ResponseParser.validateResponse("keywords", { keywords: ["a"] })).toBeNull();
+      expect(ResponseParser.validateResponse("keywords", { keywords: [] })).not.toBeNull();
+    });
+
+    it("should validate platform posts", () => {
+      expect(
+        ResponseParser.validateResponse("linkedin", { linkedinPost: "post" })
+      ).toBeNull();
+      expect(
+        ResponseParser.validateResponse("twitter", { twitterPost: "" })
+      ).not.toBeNull();
     });
   });
 });
