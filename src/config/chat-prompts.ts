@@ -8,7 +8,7 @@ interface PlatformMessageOptions {
 
 export class ChatPrompts {
   static createInitialMessage(transcript: string): string {
-    return `Du bist ein Social-Media-Content-Optimierungsassistent für Entwickler-Content im Jahr 2025.
+    return `Du bist ein Social-Media-Content-Optimierungsassistent für Entwickler-Content im Jahr ${new Date().getFullYear()}.
 
 ${GLOBAL_PROMPT_HELPERS.BRAND_NAMES}
 
