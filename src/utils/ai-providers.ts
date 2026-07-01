@@ -164,7 +164,7 @@ export class MistralProvider implements AIProvider {
     messages: Array<{ role: string; content: string }>,
     model: string,
     responseFormat?: { type: "json_schema"; json_schema: { schema: object; name: string; strict: true } },
-    timeoutMs = 30000
+    timeoutMs = 120000
   ): Promise<string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
