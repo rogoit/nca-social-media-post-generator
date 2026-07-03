@@ -8,6 +8,8 @@ const {
   EDITOR_PASSWORD,
   GOOGLE_GEMINI_API_KEY,
   GOOGLE_GEMINI_MODELS,
+  MISTRAL_API_KEY,
+  MISTRAL_MODELS,
   N8N_WEBHOOK_URL,
 } = loadEnv(process.env.NODE_ENV || "development", process.cwd(), "");
 Object.assign(process.env, {
@@ -15,6 +17,8 @@ Object.assign(process.env, {
   EDITOR_PASSWORD,
   GOOGLE_GEMINI_API_KEY,
   GOOGLE_GEMINI_MODELS,
+  MISTRAL_API_KEY,
+  MISTRAL_MODELS,
   N8N_WEBHOOK_URL,
 });
 
