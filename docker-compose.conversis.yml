@@ -1,7 +1,7 @@
 services:
   webserver:
-    container_name: $SHORTCODE1-web
-    image: $IMAGE
+    container_name: ${SHORTCODE1:?SHORTCODE1 is required}-web
+    image: ${IMAGE:?IMAGE is required}
     restart: unless-stopped
     networks:
       - proxy
@@ -22,11 +22,11 @@ services:
       - NODE_ENV=production
       - HOST=0.0.0.0
       - PORT=4321
-      - EDITOR_ADMIN=$EDITOR_ADMIN
-      - EDITOR_PASSWORD=$EDITOR_PASSWORD
-      - GOOGLE_GEMINI_API_KEY=$GOOGLE_GEMINI_API_KEY
-      - GOOGLE_GEMINI_MODELS=$GOOGLE_GEMINI_MODELS
-      - MISTRAL_API_KEY=$MISTRAL_API_KEY
+      - EDITOR_ADMIN=${EDITOR_ADMIN:?EDITOR_ADMIN is required}
+      - EDITOR_PASSWORD=${EDITOR_PASSWORD:?EDITOR_PASSWORD is required}
+      - GOOGLE_GEMINI_API_KEY=${GOOGLE_GEMINI_API_KEY:?GOOGLE_GEMINI_API_KEY is required}
+      - GOOGLE_GEMINI_MODELS=${GOOGLE_GEMINI_MODELS:?GOOGLE_GEMINI_MODELS is required}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?MISTRAL_API_KEY is required}
 
 networks:
   proxy:
