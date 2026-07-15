@@ -6,7 +6,7 @@ import { sanitizeApiKey } from "./validation.js";
 export interface AIProvider {
   readonly name: string;
   readonly models: readonly string[];
-  generateContent(prompt: string): Promise<{ text: string; model: string }>;
+  generateContent?(prompt: string): Promise<{ text: string; model: string }>;
   extractTranscript?(
     videoBuffer: Buffer,
     mimeType: string
@@ -14,7 +14,10 @@ export interface AIProvider {
   startChatSession?(): void;
   sendChatMessage?(
     message: string,
-    responseFormat?: { type: "json_schema"; json_schema: { schema: object; name: string; strict: true } }
+    responseFormat?: {
+      type: "json_schema";
+      json_schema: { schema: object; name: string; strict: true };
+    }
   ): Promise<{ text: string; model: string }>;
 }
 
@@ -71,25 +74,6 @@ export class GoogleGeminiProvider implements AIProvider {
     this.genAI = new GoogleGenerativeAI(sanitizeApiKey(apiKey));
   }
 
-  async generateContent(prompt: string): Promise<{ text: string; model: string }> {
-    const errors: AIError[] = [];
-
-    for (const model of this.models) {
-      try {
-        const genModel = this.genAI.getGenerativeModel({ model });
-        const result = await genModel.generateContent(prompt);
-        const text = (await result.response).text();
-        return { text, model };
-      } catch (error: unknown) {
-        const aiError = collectError(error, this.name);
-        errors.push(aiError);
-        console.error(`Fehler mit ${model}:`, aiError.message);
-      }
-    }
-
-    throw new Error(`${this.name} failed: ${errors.map((e) => e.message).join(", ")}`);
-  }
-
   async extractTranscript(
     videoBuffer: Buffer,
     mimeType: string
@@ -116,32 +100,6 @@ export class GoogleGeminiProvider implements AIProvider {
       `${this.name} video transcript extraction failed: ${errors.map((e) => e.message).join(", ")}`
     );
   }
-
-  private chatSession: any = null;
-  private chatModel: string = "";
-
-  startChatSession(): void {
-    const model = this.models[0];
-    this.chatSession = this.genAI.getGenerativeModel({ model }).startChat();
-    this.chatModel = model;
-  }
-
-  startChatSessionWithModel(modelName: string): void {
-    this.chatSession = this.genAI.getGenerativeModel({ model: modelName }).startChat();
-    this.chatModel = modelName;
-  }
-
-  async sendChatMessage(message: string): Promise<{ text: string; model: string }> {
-    if (!this.chatSession) {
-      throw new Error("Chat session not started. Call startChatSession() first.");
-    }
-
-    return withRetry(async () => {
-      const result = await this.chatSession.sendMessage(message);
-      const text = (await result.response).text();
-      return { text, model: this.chatModel };
-    }, this.name);
-  }
 }
 
 export class MistralProvider implements AIProvider {
@@ -163,7 +121,10 @@ export class MistralProvider implements AIProvider {
   private async callApi(
     messages: Array<{ role: string; content: string }>,
     model: string,
-    responseFormat?: { type: "json_schema"; json_schema: { schema: object; name: string; strict: true } },
+    responseFormat?: {
+      type: "json_schema";
+      json_schema: { schema: object; name: string; strict: true };
+    },
     timeoutMs = 120000
   ): Promise<string> {
     const controller = new AbortController();
@@ -227,7 +188,10 @@ export class MistralProvider implements AIProvider {
 
   async sendChatMessage(
     message: string,
-    responseFormat?: { type: "json_schema"; json_schema: { schema: object; name: string; strict: true } }
+    responseFormat?: {
+      type: "json_schema";
+      json_schema: { schema: object; name: string; strict: true };
+    }
   ): Promise<{ text: string; model: string }> {
     if (!this.chatSession) {
       throw new Error("Chat session not started. Call startChatSession() first.");
@@ -246,40 +210,5 @@ export class MistralProvider implements AIProvider {
 
       return { text, model: this._currentModel };
     }, this.name);
-  }
-}
-
-export class AIProviderManager {
-  private providers: AIProvider[] = [];
-  private errors: AIError[] = [];
-
-  constructor(providers: AIProvider[]) {
-    this.providers = providers;
-
-    if (this.providers.length === 0) {
-      throw new Error("No AI providers configured");
-    }
-  }
-
-  async generateContent(prompt: string): Promise<{ text: string; model: string }> {
-    this.errors = [];
-
-    for (const provider of this.providers) {
-      try {
-        const result = await provider.generateContent(prompt);
-        return result;
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler";
-        this.errors.push({ provider: provider.name, message: errorMessage });
-        console.error(`Provider ${provider.name} failed:`, errorMessage);
-      }
-    }
-
-    const errorMessage = this.errors.map((e) => `${e.provider}: ${e.message}`).join(", ");
-    throw new Error(`All AI providers failed: ${errorMessage}`);
-  }
-
-  getLastErrors(): AIError[] {
-    return [...this.errors];
   }
 }
