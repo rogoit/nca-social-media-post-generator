@@ -12,6 +12,8 @@ export class ChatPrompts {
 
 ${GLOBAL_PROMPT_HELPERS.BRAND_NAMES}
 
+${GLOBAL_PROMPT_HELPERS.FACT_GROUNDING}
+
 ${GLOBAL_PROMPT_HELPERS.AVOID_EXAGGERATION}
 
 ${GLOBAL_PROMPT_HELPERS.INFORMAL_ADDRESS}
@@ -37,7 +39,10 @@ Korrektur-Hinweise:
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
   }
 
-  static createPlatformMessage(platform: ChatPlatform, options: PlatformMessageOptions = {}): string {
+  static createPlatformMessage(
+    platform: ChatPlatform,
+    options: PlatformMessageOptions = {}
+  ): string {
     switch (platform) {
       case "youtube":
         return this.youtubeMessage(options.videoDuration);
@@ -57,9 +62,7 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
       ? `\n- "timestamps": Ein Array mit GENAU 5 Zeitstempel-Strings im Format "0:00 Topic-Name". Erster ist "0:00", letzter ist "${videoDuration}", alle gleichmäßig verteilt über die Themen des Transkripts.`
       : "";
 
-    const timestampsRule = videoDuration
-      ? `\n\ntimestamps: 5 Einträge, gleichmäßig verteilt.`
-      : "";
+    const timestampsRule = videoDuration ? `\n\ntimestamps: 5 Einträge, gleichmäßig verteilt.` : "";
 
     return `Erstelle jetzt YouTube-Content basierend auf dem korrigierten Transkript und den Keywords. Gib ein JSON-Objekt mit diesen Feldern zurück:
 - "title": SEO-optimierter Titel (60-70 Zeichen, Keyword am Anfang).
@@ -67,7 +70,7 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
 
 Regeln:
 Titel: VERBOTEN sind "Meine Meinung zu...", negative Clickbait, (), &, #, !. Statt "&" immer "und"/"+" schreiben. Nie "Im Short zeige ich"/"Im Video". Ich-Perspektive. Englisch wenn Transkript englisch.
-Beschreibung: Für Entwickler. Absatz 1: These mit Hauptkeyword am Anfang. Absatz 2: Argumente aus dem Transkript. Absatz 3: Community-Diskussion. NUR Inhalte aus dem Transkript, NICHTS erfinden.${timestampsRule}
+Beschreibung: Für Entwickler. Absatz 1: These mit Hauptkeyword am Anfang. Absatz 2: Argumente aus dem Transkript. Absatz 3: Community-Diskussion. NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.${timestampsRule}
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
   }
@@ -83,6 +86,7 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
 - Abschluss: Motivierende Frage
 - 3-5 Hashtags am Ende
 - NUR passende Tools/Technologien
+- NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
   }
@@ -94,6 +98,7 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
 - Meinungsstark, diskussionsfördernd
 - KEINE Emojis
 - 1-2 Hashtags
+- NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
   }
@@ -105,6 +110,7 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
 - Persönlich, kurze Absätze
 - KEINE Emojis
 - GENAU 10 Hashtags: erste 3 MÜSSEN #nca #duisburg #ncatestify sein, 7 themenspezifisch
+- NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
   }
@@ -116,6 +122,7 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
 - Starker Hook in den ersten 10-15 Wörtern
 - KEINE Emojis
 - 3-6 Hashtags (deutsch + englisch Mix)
+- NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
   }
