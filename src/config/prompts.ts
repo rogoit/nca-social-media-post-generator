@@ -3,6 +3,12 @@ export const GLOBAL_PROMPT_HELPERS = {
 
   AVOID_EXAGGERATION: `KEINE übertriebenen Wörter wie "ultimativ", "revolutionär", "Revolution", "revolutionieren", "unglaublich" - halte es sachlich und präzise.`,
 
+  FACT_GROUNDING: `VERPFLICHTUNG auf Fakten aus dem Transkript. STRENG VERBOTEN, etwas zu erfinden oder zu ergänzen:
+- KEINE Zeitangaben oder Datum-Bezüge ("vor ein paar Tagen", "heute", "gestern", "neulich", "kürzlich", Wochentage, Jahreszahlen), es sei denn, das exakte Wort steht im Transkript.
+- KEINE Zahlen, Statistiken, Mengen oder Messwerte (Teilnehmer, Follower, Jahre, Prozent), die nicht im Transkript stehen.
+- KEINE erfundenen Event-Orte, Event-Namen, Personennamen, Zitate, Quellen oder Ich-Erlebnisse.
+- Jede Behauptung muss im Transkript belegt sein. Fehlt eine Angabe (z.B. ein Datum), dann LASSE sie weg statt sie zu erfinden.`,
+
   INFORMAL_ADDRESS: `Verwende eine informelle Anrede ("ihr/euch/eure" statt "Sie/Ihnen") und einen lockeren, direkten Ton.`,
 
   HUMANIZER: `Schreibe wie ein Mensch, nicht wie eine KI. Keine typischen KI-Schreibmuster. Konkret:
@@ -17,7 +23,6 @@ export const GLOBAL_PROMPT_HELPERS = {
 - KEINE mechanische Regel-der-Drei (Trikolon: "X, Y und Z" in jedem Satz). Keine gleichförmigen Satzrhythmen, kein Parataxen-Staupen.
 - KEINE Kollaborativsprache ("ich hoffe, das hilft", "lass uns gemeinsam schauen", "bleibt gespannt").
 - KEINE Passivkonstruktionen wo Aktiv natürlicher klingt ("es wird gezeigt" -> "das zeigt").
-- KEINE erfundene Ich-Erfahrung oder Quellen. Keine Behauptungen, die nicht im Transkript stehen.
 - KEINE Unicode-Sonderzeichen, keine Emojis (wo nicht ausdrücklich gefordert).
 
 Schreibe stattdessen authentisch deutsch:
