@@ -40,6 +40,13 @@ describe("ChatPrompts", () => {
       expect(msg).toContain("Bindestriche");
       expect(msg).toContain("Schreibe wie ein Mensch");
     });
+
+    it("should include fact-grounding rules forbidding invented temporal/numeric claims", () => {
+      const msg = ChatPrompts.createInitialMessage(transcript);
+      expect(msg).toContain("Fakten aus dem Transkript");
+      expect(msg).toContain("Zeitangaben");
+      expect(msg).toContain("vor ein paar Tagen");
+    });
   });
 
   describe("createPlatformMessage", () => {
@@ -51,6 +58,7 @@ describe("ChatPrompts", () => {
       expect(msg).not.toContain("TITLE:");
       expect(msg).not.toContain("DESCRIPTION:");
       expect(msg).not.toContain("Never Code Alone");
+      expect(msg).toContain("NUR Fakten aus dem Transkript");
     });
 
     it("should include timestamps field when videoDuration provided", () => {
@@ -70,6 +78,7 @@ describe("ChatPrompts", () => {
       expect(msg).toContain('"linkedinPost"');
       expect(msg).not.toContain("LINKEDIN POST:");
       expect(msg).not.toContain("Never Code Alone");
+      expect(msg).toContain("NUR Fakten aus dem Transkript");
     });
 
     it("should create short Twitter message requesting JSON with twitterPost field", () => {
@@ -78,6 +87,7 @@ describe("ChatPrompts", () => {
       expect(msg).toContain('"twitterPost"');
       expect(msg).not.toContain("TWITTER POST:");
       expect(msg.length).toBeLessThan(1000);
+      expect(msg).toContain("NUR Fakten aus dem Transkript");
     });
 
     it("should create Instagram message with required hashtags", () => {
@@ -86,6 +96,7 @@ describe("ChatPrompts", () => {
       expect(msg).toContain('"instagramPost"');
       expect(msg).toContain("#nca #duisburg #ncatestify");
       expect(msg).not.toContain("INSTAGRAM POST:");
+      expect(msg).toContain("NUR Fakten aus dem Transkript");
     });
 
     it("should create TikTok message requesting JSON with tiktokPost field", () => {
@@ -93,6 +104,7 @@ describe("ChatPrompts", () => {
       expect(msg).toContain("JSON-Objekt");
       expect(msg).toContain('"tiktokPost"');
       expect(msg).not.toContain("TIKTOK POST:");
+      expect(msg).toContain("NUR Fakten aus dem Transkript");
     });
   });
 });
