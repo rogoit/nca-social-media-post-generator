@@ -14,6 +14,7 @@ import {
   TIKTOK_RESPONSE_FORMAT,
 } from "../../config/schemas.js";
 import { jsonResponse } from "../../utils/api-helpers.js";
+import { lintPost, formatViolationsForRetry } from "../../utils/humanizer-lint.js";
 
 const MISTRAL_API_KEY = import.meta.env.MISTRAL_API_KEY;
 
@@ -165,16 +166,51 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // Humanizer lint: scan Gemini output for KI-Marker-Vokabular (Pattern 64) and
+    // Fake-Analyse-Anhang (Pattern 66). On violation, retry once via the existing
+    // chat session with the forbidden words fed back. If still dirty, keep the
+    // cleaner version and surface warnings to the UI.
+    let finalText = text;
+    let humanizerWarnings: string[] = [];
+    const humanizerReport = lintPost(text);
+    if (humanizerReport.blocked) {
+      const forbiddenList = formatViolationsForRetry(humanizerReport);
+      const retryMessage = `Überarbeite deine letzte Antwort. Ersetze unbedingt diese Wörter und Muster: ${forbiddenList}. Behalte alle Fakten, Zahlen, Aussagen und das JSON-Format bei. Gib NUR das überarbeitete JSON-Objekt zurück.`;
+      try {
+        const retryResult = await mistralProvider.sendChatMessage(
+          retryMessage,
+          platformResponseFormat
+        );
+        const retryReport = lintPost(retryResult.text);
+        if (!retryReport.blocked) {
+          finalText = retryResult.text;
+        } else if (retryReport.violations.length < humanizerReport.violations.length) {
+          finalText = retryResult.text;
+          humanizerWarnings = Array.from(new Set(retryReport.violations.map((v) => v.word)));
+        } else {
+          humanizerWarnings = Array.from(new Set(humanizerReport.violations.map((v) => v.word)));
+        }
+      } catch (retryError) {
+        console.warn("Humanizer retry failed:", retryError);
+        humanizerWarnings = Array.from(new Set(humanizerReport.violations.map((v) => v.word)));
+      }
+    }
+
+    // Re-parse if humanizer changed the text
+    const finalParsedResponse =
+      finalText !== text ? ResponseParser.parseResponse(type, finalText) : parsedResponse;
+
     // For YouTube: use the corrected transcript from the chat session
     if (type === "youtube") {
-      parsedResponse.transcript = chatCorrectedTranscript || undefined;
+      finalParsedResponse.transcript = chatCorrectedTranscript || undefined;
     }
 
     // Create final response
     const responseData: GenerateResponse = {
-      ...parsedResponse,
+      ...finalParsedResponse,
       transcriptCleaned,
       modelUsed: model,
+      humanizerWarnings: humanizerWarnings.length > 0 ? humanizerWarnings : undefined,
     };
 
     return jsonResponse(responseData);

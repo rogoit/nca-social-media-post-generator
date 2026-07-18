@@ -25,6 +25,7 @@ export interface GenerateResponse {
   keywords?: string[];
   transcriptCleaned: boolean;
   modelUsed: string;
+  humanizerWarnings?: string[];
   error?: string;
 }
 
