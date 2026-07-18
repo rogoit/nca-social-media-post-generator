@@ -41,6 +41,15 @@ describe("ChatPrompts", () => {
       expect(msg).toContain("Schreibe wie ein Mensch");
     });
 
+    it("should include expanded AI marker vocabulary in prompts", () => {
+      const msg = ChatPrompts.createInitialMessage(transcript);
+      expect(msg).toContain("revolutioniert");
+      expect(msg).toContain("Game-Changer");
+      expect(msg).toContain("KI-Marker-Vokabeln");
+      expect(msg).toContain("Fake-Analyse-Anhänge");
+      expect(msg).toContain("unterstreichen");
+    });
+
     it("should include fact-grounding rules forbidding invented temporal/numeric claims", () => {
       const msg = ChatPrompts.createInitialMessage(transcript);
       expect(msg).toContain("Fakten aus dem Transkript");
