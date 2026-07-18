@@ -31,14 +31,9 @@ export default defineConfig(({ mode }) => {
             name: "real",
             include: ["test/real/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
             environment: "node",
-            // Parallelization for real API tests
+            // Parallelization for real API tests (v3: top-level maxWorkers replaces poolOptions.threads.maxThreads)
             pool: "threads",
-            poolOptions: {
-              threads: {
-                maxThreads: 4,
-                minThreads: 2,
-              },
-            },
+            maxWorkers: 4,
             testTimeout: 45000, // 45s default timeout for real tests
           },
         },
