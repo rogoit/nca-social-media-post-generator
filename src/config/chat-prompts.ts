@@ -34,6 +34,7 @@ Korrektur-Hinweise:
 - "Superlo", "Superclo", "Superclode" ersetze mit "SuperClaude"
 - "PAP", "PP" ersetze mit "PHP"
 - "Sulo", "Solu" ersetze mit "Sulu"
+- "Open Code", "open code", "opencode", "cs code" ersetze mit "OpenCode"
 - Wenn Transkript auf Englisch ist, bleibe auf Englisch
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
