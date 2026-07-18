@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { GoogleGeminiProvider } from "../../src/utils/ai-providers.js";
 
 // We test the interface — the actual Gemini call is mocked in functional tests
