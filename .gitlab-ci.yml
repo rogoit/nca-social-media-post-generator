@@ -2,28 +2,49 @@ variables:
   CI_IMAGE: $CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID
 
 stages:
+  - test
   - build
   - deploy
 
+test:
+  stage: test
+  image: node:22-alpine
+  tags:
+    - docker2
+  only:
+    - main
+    - merge_request
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+  script:
+    - npm ci
+    - npm run type-check
+    - npm run format:check
+    - npm run test:run
+
 build:
   stage: build
+  tags:
+    - docker1
+  only:
+    - main
+    - merge_request
+  needs: ["test"]
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
   script:
     - docker build -f Dockerfile.conversis -t $CI_IMAGE --pull .
     - docker push $CI_IMAGE
-  tags:
-    - docker1
 
 deploy:
   stage: deploy
   tags:
     - docker2
   only:
-    - merge_request
     - main
-  when: manual
-  needs: ["build"]
+  needs: ["test", "build"]
   environment:
     name: live
     url: https://$URL
