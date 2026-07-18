@@ -1,4 +1,4 @@
-import { defineMiddleware } from "astro:middleware";
+import type { MiddlewareHandler } from "astro";
 
 const PUBLIC_PATHS = ["/login", "/api/login", "/api/logout"];
 
@@ -8,7 +8,7 @@ function getEnv(variable: string): string {
   return value;
 }
 
-export const onRequest = defineMiddleware(async (context, next) => {
+export const onRequest: MiddlewareHandler = async (context, next) => {
   const { pathname } = context.url;
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
@@ -42,4 +42,4 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   return next();
-});
+};
