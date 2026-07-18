@@ -13,6 +13,7 @@
 ### Task 1: Add video validation utility
 
 **Files:**
+
 - Modify: `src/utils/validation.ts`
 - Test: `test/unit/validation.test.ts`
 
@@ -25,23 +26,33 @@ import { validateVideoFile } from "../../src/utils/validation.js";
 
 describe("validateVideoFile", () => {
   it("should accept valid video files", () => {
-    expect(validateVideoFile({ name: "video.mp4", size: 50_000_000, type: "video/mp4" })).toBe(null);
+    expect(validateVideoFile({ name: "video.mp4", size: 50_000_000, type: "video/mp4" })).toBe(
+      null
+    );
   });
 
   it("should reject files over 100MB", () => {
-    expect(validateVideoFile({ name: "big.mp4", size: 150_000_000, type: "video/mp4" })).toContain("100 MB");
+    expect(validateVideoFile({ name: "big.mp4", size: 150_000_000, type: "video/mp4" })).toContain(
+      "100 MB"
+    );
   });
 
   it("should reject non-video mime types", () => {
-    expect(validateVideoFile({ name: "doc.pdf", size: 1000, type: "application/pdf" })).toContain("MP4, MOV, WebM");
+    expect(validateVideoFile({ name: "doc.pdf", size: 1000, type: "application/pdf" })).toContain(
+      "MP4, MOV, WebM"
+    );
   });
 
   it("should accept MOV files", () => {
-    expect(validateVideoFile({ name: "video.mov", size: 50_000_000, type: "video/quicktime" })).toBe(null);
+    expect(
+      validateVideoFile({ name: "video.mov", size: 50_000_000, type: "video/quicktime" })
+    ).toBe(null);
   });
 
   it("should accept WebM files", () => {
-    expect(validateVideoFile({ name: "video.webm", size: 50_000_000, type: "video/webm" })).toBe(null);
+    expect(validateVideoFile({ name: "video.webm", size: 50_000_000, type: "video/webm" })).toBe(
+      null
+    );
   });
 
   it("should reject null input", () => {
@@ -63,7 +74,11 @@ Add to `src/utils/validation.ts`:
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 
-export function validateVideoFile(file: { name: string; size: number; type: string }): string | null {
+export function validateVideoFile(file: {
+  name: string;
+  size: number;
+  type: string;
+}): string | null {
   if (!file) {
     return "Bitte wähle eine Video-Datei aus.";
   }
@@ -97,6 +112,7 @@ git commit -m "feat: add video file validation utility"
 ### Task 2: Add Gemini video transcript extraction
 
 **Files:**
+
 - Modify: `src/utils/ai-providers.ts`
 - Modify: `src/config/constants.ts`
 - Test: `test/unit/ai-providers-video.test.ts`
@@ -179,7 +195,10 @@ export interface AIProvider {
   readonly name: string;
   readonly models: readonly string[];
   generateContent(prompt: string): Promise<{ text: string; model: string }>;
-  extractTranscript?(videoBuffer: Buffer, mimeType: string): Promise<{ text: string; model: string }>;
+  extractTranscript?(
+    videoBuffer: Buffer,
+    mimeType: string
+  ): Promise<{ text: string; model: string }>;
 }
 ```
 
@@ -200,6 +219,7 @@ git commit -m "feat: add Gemini video transcript extraction method"
 ### Task 3: Create the video upload API route
 
 **Files:**
+
 - Create: `src/pages/api/generate-from-video.ts`
 - Test: `test/functional/generate-from-video.test.ts`
 
@@ -341,6 +361,7 @@ git commit -m "feat: add video upload API route with transcript extraction"
 ### Task 4: Create the n8n webhook sender API route
 
 **Files:**
+
 - Create: `src/pages/api/send-to-n8n.ts`
 - Test: `test/functional/send-to-n8n.test.ts`
 
@@ -402,20 +423,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!n8nResponse.ok) {
       const errorText = await n8nResponse.text().catch(() => "Unknown error");
-      return jsonResponse(
-        { error: "n8n-Webhook fehlgeschlagen.", details: errorText },
-        502
-      );
+      return jsonResponse({ error: "n8n-Webhook fehlgeschlagen.", details: errorText }, 502);
     }
 
     const n8nData = await n8nResponse.json().catch(() => ({}));
     return jsonResponse({ success: true, n8nResponse: n8nData });
   } catch (error: any) {
     console.error("n8n send error:", error);
-    return jsonResponse(
-      { error: "Fehler beim Senden an n8n.", details: error.message },
-      500
-    );
+    return jsonResponse({ error: "Fehler beim Senden an n8n.", details: error.message }, 500);
   }
 };
 
@@ -444,6 +459,7 @@ git commit -m "feat: add n8n webhook sender API route"
 ### Task 5: Add N8N_WEBHOOK_URL to env config
 
 **Files:**
+
 - Modify: `astro.config.mjs`
 
 **Step 1: Add the env var to the config**
@@ -484,6 +500,7 @@ git commit -m "feat: add N8N_WEBHOOK_URL to env config"
 ### Task 6: Build the Video Upload UI — Tab system on index.astro
 
 **Files:**
+
 - Modify: `src/pages/index.astro`
 
 **Step 1: Add tab navigation at the top of the form**
@@ -496,11 +513,15 @@ Replace the opening of `index.astro` content (after `<div class="bg-white p-6 ro
   <button
     id="mode-transcript-tab"
     class="px-6 py-2 font-medium border-b-2 border-indigo-600 text-indigo-600 rounded-t-md"
-  >Transkript eingeben</button>
+  >
+    Transkript eingeben
+  </button>
   <button
     id="mode-video-tab"
     class="px-6 py-2 font-medium text-gray-500 hover:text-indigo-600 rounded-t-md"
-  >Video hochladen</button>
+  >
+    Video hochladen
+  </button>
 </div>
 
 <!-- Tab: Transcript Input (existing flow) -->
@@ -518,12 +539,23 @@ Replace the opening of `index.astro` content (after `<div class="bg-white p-6 ro
     >
       <p class="text-gray-500 mb-2">Video hierher ziehen oder klicken zum Auswählen</p>
       <p class="text-xs text-gray-400">MP4, MOV, WebM — max 100 MB, max 1 Min, 1080p vertikal</p>
-      <input type="file" id="video-file-input" accept="video/mp4,video/quicktime,video/webm" class="hidden" />
+      <input
+        type="file"
+        id="video-file-input"
+        accept="video/mp4,video/quicktime,video/webm"
+        class="hidden"
+      />
     </div>
     <!-- Video Preview -->
     <div id="video-preview-container" class="hidden mt-4">
       <video id="video-preview" class="w-full max-h-64 rounded-lg bg-black" controls></video>
-      <button type="button" id="video-remove-btn" class="mt-2 text-sm text-red-600 hover:text-red-800">Video entfernen</button>
+      <button
+        type="button"
+        id="video-remove-btn"
+        class="mt-2 text-sm text-red-600 hover:text-red-800"
+      >
+        Video entfernen
+      </button>
     </div>
   </div>
 
@@ -541,15 +573,27 @@ Replace the opening of `index.astro` content (after `<div class="bg-white p-6 ro
   <div id="video-progress" class="hidden mt-6">
     <div class="space-y-3">
       <div id="progress-transcript" class="flex items-center text-gray-400">
-        <div class="w-6 h-6 mr-3 rounded-full border-2 border-gray-300 flex items-center justify-center text-xs">1</div>
+        <div
+          class="w-6 h-6 mr-3 rounded-full border-2 border-gray-300 flex items-center justify-center text-xs"
+        >
+          1
+        </div>
         <span>Transkript wird extrahiert...</span>
       </div>
       <div id="progress-keywords" class="flex items-center text-gray-400">
-        <div class="w-6 h-6 mr-3 rounded-full border-2 border-gray-300 flex items-center justify-center text-xs">2</div>
+        <div
+          class="w-6 h-6 mr-3 rounded-full border-2 border-gray-300 flex items-center justify-center text-xs"
+        >
+          2
+        </div>
         <span>Keywords werden erkannt...</span>
       </div>
       <div id="progress-content" class="flex items-center text-gray-400">
-        <div class="w-6 h-6 mr-3 rounded-full border-2 border-gray-300 flex items-center justify-center text-xs">3</div>
+        <div
+          class="w-6 h-6 mr-3 rounded-full border-2 border-gray-300 flex items-center justify-center text-xs"
+        >
+          3
+        </div>
         <span>Content wird generiert...</span>
       </div>
     </div>
@@ -562,13 +606,31 @@ Replace the opening of `index.astro` content (after `<div class="bg-white p-6 ro
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-medium text-red-600">YouTube</h3>
         <div class="flex space-x-2">
-          <button type="button" class="regenerate-btn px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50" data-platform="youtube">Neu generieren</button>
-          <button type="button" class="approve-btn px-3 py-1 text-sm text-white bg-green-600 rounded-md hover:bg-green-700" data-platform="youtube">Freigeben</button>
+          <button
+            type="button"
+            class="regenerate-btn px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+            data-platform="youtube"
+          >
+            Neu generieren
+          </button>
+          <button
+            type="button"
+            class="approve-btn px-3 py-1 text-sm text-white bg-green-600 rounded-md hover:bg-green-700"
+            data-platform="youtube"
+          >
+            Freigeben
+          </button>
         </div>
       </div>
       <div class="space-y-2 text-sm">
-        <div><span class="font-medium">Titel:</span> <span id="approval-yt-title" class="text-gray-700"></span></div>
-        <div><span class="font-medium">Beschreibung:</span> <p id="approval-yt-description" class="text-gray-700 whitespace-pre-line mt-1"></p></div>
+        <div>
+          <span class="font-medium">Titel:</span>
+          <span id="approval-yt-title" class="text-gray-700"></span>
+        </div>
+        <div>
+          <span class="font-medium">Beschreibung:</span>
+          <p id="approval-yt-description" class="text-gray-700 whitespace-pre-line mt-1"></p>
+        </div>
       </div>
     </div>
 
@@ -577,8 +639,20 @@ Replace the opening of `index.astro` content (after `<div class="bg-white p-6 ro
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-medium text-blue-600">LinkedIn</h3>
         <div class="flex space-x-2">
-          <button type="button" class="regenerate-btn px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50" data-platform="linkedin">Neu generieren</button>
-          <button type="button" class="approve-btn px-3 py-1 text-sm text-white bg-green-600 rounded-md hover:bg-green-700" data-platform="linkedin">Freigeben</button>
+          <button
+            type="button"
+            class="regenerate-btn px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+            data-platform="linkedin"
+          >
+            Neu generieren
+          </button>
+          <button
+            type="button"
+            class="approve-btn px-3 py-1 text-sm text-white bg-green-600 rounded-md hover:bg-green-700"
+            data-platform="linkedin"
+          >
+            Freigeben
+          </button>
         </div>
       </div>
       <div id="approval-li-post" class="text-sm text-gray-700 whitespace-pre-line"></div>
@@ -589,8 +663,20 @@ Replace the opening of `index.astro` content (after `<div class="bg-white p-6 ro
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-medium text-pink-600">Instagram</h3>
         <div class="flex space-x-2">
-          <button type="button" class="regenerate-btn px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50" data-platform="instagram">Neu generieren</button>
-          <button type="button" class="approve-btn px-3 py-1 text-sm text-white bg-green-600 rounded-md hover:bg-green-700" data-platform="instagram">Freigeben</button>
+          <button
+            type="button"
+            class="regenerate-btn px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+            data-platform="instagram"
+          >
+            Neu generieren
+          </button>
+          <button
+            type="button"
+            class="approve-btn px-3 py-1 text-sm text-white bg-green-600 rounded-md hover:bg-green-700"
+            data-platform="instagram"
+          >
+            Freigeben
+          </button>
         </div>
       </div>
       <div id="approval-ig-post" class="text-sm text-gray-700 whitespace-pre-line"></div>
@@ -601,8 +687,20 @@ Replace the opening of `index.astro` content (after `<div class="bg-white p-6 ro
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-medium text-black">TikTok</h3>
         <div class="flex space-x-2">
-          <button type="button" class="regenerate-btn px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50" data-platform="tiktok">Neu generieren</button>
-          <button type="button" class="approve-btn px-3 py-1 text-sm text-white bg-green-600 rounded-md hover:bg-green-700" data-platform="tiktok">Freigeben</button>
+          <button
+            type="button"
+            class="regenerate-btn px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+            data-platform="tiktok"
+          >
+            Neu generieren
+          </button>
+          <button
+            type="button"
+            class="approve-btn px-3 py-1 text-sm text-white bg-green-600 rounded-md hover:bg-green-700"
+            data-platform="tiktok"
+          >
+            Freigeben
+          </button>
         </div>
       </div>
       <div id="approval-tt-post" class="text-sm text-gray-700 whitespace-pre-line"></div>
@@ -638,6 +736,7 @@ git commit -m "feat: add video upload tab UI with platform approval cards"
 ### Task 7: Build the Video Upload client-side logic
 
 **Files:**
+
 - Create: `src/scripts/video-upload.js`
 - Modify: `src/scripts/main.js`
 
@@ -646,7 +745,15 @@ git commit -m "feat: add video upload tab UI with platform approval cards"
 Create `src/scripts/video-upload.js`:
 
 ```javascript
-import { getElement, hideElement, showElement, setTextContent, displayError, hideError, ApiError } from "./utils.js";
+import {
+  getElement,
+  hideElement,
+  showElement,
+  setTextContent,
+  displayError,
+  hideError,
+  ApiError,
+} from "./utils.js";
 
 export class VideoUploadApp {
   constructor() {
@@ -761,11 +868,19 @@ export class VideoUploadApp {
   handleVideoSelect(file) {
     const allowedTypes = ["video/mp4", "video/quicktime", "video/webm"];
     if (!allowedTypes.includes(file.type)) {
-      displayError(this.errorDiv, this.errorMessage, "Ungültiges Format. Erlaubt sind: MP4, MOV, WebM.");
+      displayError(
+        this.errorDiv,
+        this.errorMessage,
+        "Ungültiges Format. Erlaubt sind: MP4, MOV, WebM."
+      );
       return;
     }
     if (file.size > 100 * 1024 * 1024) {
-      displayError(this.errorDiv, this.errorMessage, "Die Datei ist zu groß. Maximal 100 MB erlaubt.");
+      displayError(
+        this.errorDiv,
+        this.errorMessage,
+        "Die Datei ist zu groß. Maximal 100 MB erlaubt."
+      );
       return;
     }
 
@@ -1063,6 +1178,7 @@ Expected: Build succeeds
 ### Task 9: Update README
 
 **Files:**
+
 - Modify: `README.md`
 
 **Step 1: Add Video Upload feature to README**

@@ -7,8 +7,7 @@ describe("ResponseParser", () => {
       const mockResponse = JSON.stringify({
         transcript: "This is the corrected transcript with proper punctuation.",
         title: "JavaScript 2025: Die wichtigste Frage",
-        description:
-          "JavaScript bleibt auch 2025 eine der wichtigsten Programmiersprachen.",
+        description: "JavaScript bleibt auch 2025 eine der wichtigsten Programmiersprachen.",
         timestamps: [
           "0:00 JavaScript 2025 Überblick",
           "2:30 Neue ES2024 Features",
@@ -18,9 +17,7 @@ describe("ResponseParser", () => {
 
       const result = ResponseParser.parseResponse("youtube", mockResponse);
 
-      expect(result.transcript).toBe(
-        "This is the corrected transcript with proper punctuation."
-      );
+      expect(result.transcript).toBe("This is the corrected transcript with proper punctuation.");
       expect(result.title).toBe("JavaScript 2025: Die wichtigste Frage");
       expect(result.description).toContain("JavaScript bleibt auch 2025");
       expect(result.timestamps).toContain("0:00 JavaScript 2025 Überblick");
@@ -41,8 +38,7 @@ describe("ResponseParser", () => {
 
     it("should parse LinkedIn JSON response correctly", () => {
       const mockResponse = JSON.stringify({
-        linkedinPost:
-          "Heute möchte ich über JavaScript sprechen. #javascript #webdev",
+        linkedinPost: "Heute möchte ich über JavaScript sprechen. #javascript #webdev",
       });
 
       const result = ResponseParser.parseResponse("linkedin", mockResponse);
@@ -62,8 +58,7 @@ describe("ResponseParser", () => {
 
     it("should parse Instagram JSON response correctly", () => {
       const mockResponse = JSON.stringify({
-        instagramPost:
-          "JavaScript bleibt 2025 unverzichtbar. #nca #duisburg #ncatestify",
+        instagramPost: "JavaScript bleibt 2025 unverzichtbar. #nca #duisburg #ncatestify",
       });
 
       const result = ResponseParser.parseResponse("instagram", mockResponse);
@@ -242,8 +237,12 @@ describe("ResponseParser", () => {
 
   describe("validateResponse", () => {
     it("should validate YouTube response requires title and description", () => {
-      expect(ResponseParser.validateResponse("youtube", { title: "T", description: "D" })).toBeNull();
-      expect(ResponseParser.validateResponse("youtube", { title: "", description: "D" })).not.toBeNull();
+      expect(
+        ResponseParser.validateResponse("youtube", { title: "T", description: "D" })
+      ).toBeNull();
+      expect(
+        ResponseParser.validateResponse("youtube", { title: "", description: "D" })
+      ).not.toBeNull();
       expect(ResponseParser.validateResponse("youtube", { title: "T" })).not.toBeNull();
     });
 
@@ -253,12 +252,8 @@ describe("ResponseParser", () => {
     });
 
     it("should validate platform posts", () => {
-      expect(
-        ResponseParser.validateResponse("linkedin", { linkedinPost: "post" })
-      ).toBeNull();
-      expect(
-        ResponseParser.validateResponse("twitter", { twitterPost: "" })
-      ).not.toBeNull();
+      expect(ResponseParser.validateResponse("linkedin", { linkedinPost: "post" })).toBeNull();
+      expect(ResponseParser.validateResponse("twitter", { twitterPost: "" })).not.toBeNull();
     });
   });
 });

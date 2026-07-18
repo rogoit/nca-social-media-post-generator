@@ -1,4 +1,11 @@
-import { getElement, hideElement, showElement, setTextContent, displayError, hideError } from "./utils.js";
+import {
+  getElement,
+  hideElement,
+  showElement,
+  setTextContent,
+  displayError,
+  hideError,
+} from "./utils.js";
 
 export class VideoUploadApp {
   constructor() {
@@ -113,11 +120,19 @@ export class VideoUploadApp {
   handleVideoSelect(file) {
     const allowedTypes = ["video/mp4", "video/quicktime", "video/webm"];
     if (!allowedTypes.includes(file.type)) {
-      displayError(this.errorDiv, this.errorMessage, "Ungültiges Format. Erlaubt sind: MP4, MOV, WebM.");
+      displayError(
+        this.errorDiv,
+        this.errorMessage,
+        "Ungültiges Format. Erlaubt sind: MP4, MOV, WebM."
+      );
       return;
     }
     if (file.size > 100 * 1024 * 1024) {
-      displayError(this.errorDiv, this.errorMessage, "Die Datei ist zu groß. Maximal 100 MB erlaubt.");
+      displayError(
+        this.errorDiv,
+        this.errorMessage,
+        "Die Datei ist zu groß. Maximal 100 MB erlaubt."
+      );
       return;
     }
 

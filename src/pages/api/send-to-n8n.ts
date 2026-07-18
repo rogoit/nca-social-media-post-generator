@@ -32,19 +32,13 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!n8nResponse.ok) {
       const errorText = await n8nResponse.text().catch(() => "Unknown error");
-      return jsonResponse(
-        { error: "n8n-Webhook fehlgeschlagen.", details: errorText },
-        502
-      );
+      return jsonResponse({ error: "n8n-Webhook fehlgeschlagen.", details: errorText }, 502);
     }
 
     const n8nData = await n8nResponse.json().catch(() => ({}));
     return jsonResponse({ success: true, n8nResponse: n8nData });
   } catch (error: any) {
     console.error("n8n send error:", error);
-    return jsonResponse(
-      { error: "Fehler beim Senden an n8n.", details: error.message },
-      500
-    );
+    return jsonResponse({ error: "Fehler beim Senden an n8n.", details: error.message }, 500);
   }
 };

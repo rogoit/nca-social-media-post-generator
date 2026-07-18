@@ -122,23 +122,33 @@ describe("Validation Utilities", () => {
 
   describe("validateVideoFile", () => {
     it("should accept valid video files", () => {
-      expect(validateVideoFile({ name: "video.mp4", size: 50_000_000, type: "video/mp4" })).toBe(null);
+      expect(validateVideoFile({ name: "video.mp4", size: 50_000_000, type: "video/mp4" })).toBe(
+        null
+      );
     });
 
     it("should reject files over 100MB", () => {
-      expect(validateVideoFile({ name: "big.mp4", size: 150_000_000, type: "video/mp4" })).toContain("100 MB");
+      expect(
+        validateVideoFile({ name: "big.mp4", size: 150_000_000, type: "video/mp4" })
+      ).toContain("100 MB");
     });
 
     it("should reject non-video mime types", () => {
-      expect(validateVideoFile({ name: "doc.pdf", size: 1000, type: "application/pdf" })).toContain("MP4, MOV, WebM");
+      expect(validateVideoFile({ name: "doc.pdf", size: 1000, type: "application/pdf" })).toContain(
+        "MP4, MOV, WebM"
+      );
     });
 
     it("should accept MOV files", () => {
-      expect(validateVideoFile({ name: "video.mov", size: 50_000_000, type: "video/quicktime" })).toBe(null);
+      expect(
+        validateVideoFile({ name: "video.mov", size: 50_000_000, type: "video/quicktime" })
+      ).toBe(null);
     });
 
     it("should accept WebM files", () => {
-      expect(validateVideoFile({ name: "video.webm", size: 50_000_000, type: "video/webm" })).toBe(null);
+      expect(validateVideoFile({ name: "video.webm", size: 50_000_000, type: "video/webm" })).toBe(
+        null
+      );
     });
 
     it("should reject null input", () => {

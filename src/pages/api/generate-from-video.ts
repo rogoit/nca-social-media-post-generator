@@ -90,7 +90,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Turn 2: YouTube
     const ytMsg = ChatPrompts.createPlatformMessage("youtube");
-    const { text: ytText } = await mistralProvider.sendChatMessage(ytMsg, getYoutubeResponseFormat());
+    const { text: ytText } = await mistralProvider.sendChatMessage(
+      ytMsg,
+      getYoutubeResponseFormat()
+    );
     const ytResult = ResponseParser.parseResponse("youtube", ytText);
 
     // Turn 3: LinkedIn
@@ -105,7 +108,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Turn 5: Instagram
     const igMsg = ChatPrompts.createPlatformMessage("instagram");
-    const { text: igText } = await mistralProvider.sendChatMessage(igMsg, INSTAGRAM_RESPONSE_FORMAT);
+    const { text: igText } = await mistralProvider.sendChatMessage(
+      igMsg,
+      INSTAGRAM_RESPONSE_FORMAT
+    );
     const igResult = ResponseParser.parseResponse("instagram", igText);
 
     // Turn 6: TikTok

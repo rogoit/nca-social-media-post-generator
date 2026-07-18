@@ -51,15 +51,23 @@ export class PlatformManager {
 
       tab.classList.remove(
         "border-b-2",
-        "text-red-600", "border-red-600",
-        "text-blue-600", "border-blue-600",
-        "text-black", "border-black",
-        "text-pink-600", "border-pink-600",
+        "text-red-600",
+        "border-red-600",
+        "text-blue-600",
+        "border-blue-600",
+        "text-black",
+        "border-black",
+        "text-pink-600",
+        "border-pink-600",
         "text-gray-500"
       );
 
       if (isActive) {
-        tab.classList.add("border-b-2", `text-${config.color.primary}`, `border-${config.color.primary}`);
+        tab.classList.add(
+          "border-b-2",
+          `text-${config.color.primary}`,
+          `border-${config.color.primary}`
+        );
       } else {
         tab.classList.add("text-gray-500");
       }
@@ -146,7 +154,9 @@ export class PlatformManager {
 
   hasResultContent(platform) {
     if (platform === "youtube") {
-      return !!(getElement("title-content").textContent || getElement("description-content").textContent);
+      return !!(
+        getElement("title-content").textContent || getElement("description-content").textContent
+      );
     }
     const config = POST_DISPLAY[platform];
     if (!config) return false;

@@ -87,7 +87,10 @@ const PLATFORM_RESPONSE_FORMATS = {
 export const POST: APIRoute = async ({ request }) => {
   try {
     if (!mistralProvider) {
-      return jsonResponse({ error: "AI-Dienste nicht verfügbar. Bitte MISTRAL_API_KEY prüfen." }, 503);
+      return jsonResponse(
+        { error: "AI-Dienste nicht verfügbar. Bitte MISTRAL_API_KEY prüfen." },
+        503
+      );
     }
 
     // Parse and validate request
@@ -139,7 +142,10 @@ export const POST: APIRoute = async ({ request }) => {
         error.message && /\[503\s|\[429\s|Resource has been exhausted/i.test(error.message);
       if (is503or429 && (await restartChatOnFallbackModel(transcript))) {
         console.warn(`Retrying platform ${type} on fallback model ${chatModel}`);
-        const result = await mistralProvider.sendChatMessage(platformMessage, platformResponseFormat);
+        const result = await mistralProvider.sendChatMessage(
+          platformMessage,
+          platformResponseFormat
+        );
         text = result.text;
         model = result.model;
       } else {
@@ -153,7 +159,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Validate that the response contains meaningful content
     const validationError = ResponseParser.validateResponse(type, parsedResponse);
     if (validationError) {
-      return jsonResponse({ error: "AI-Antwort enthält keine gültigen Inhalte", details: validationError }, 502);
+      return jsonResponse(
+        { error: "AI-Antwort enthält keine gültigen Inhalte", details: validationError },
+        502
+      );
     }
 
     // For YouTube: use the corrected transcript from the chat session
@@ -176,7 +185,10 @@ export const POST: APIRoute = async ({ request }) => {
       error.message?.includes("All AI providers failed") ||
       error.message?.includes("Chat session")
     ) {
-      return jsonResponse({ error: "Inhaltsgenerierung fehlgeschlagen", details: error.message }, 503);
+      return jsonResponse(
+        { error: "Inhaltsgenerierung fehlgeschlagen", details: error.message },
+        503
+      );
     }
 
     return jsonResponse(

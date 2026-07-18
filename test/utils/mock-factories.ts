@@ -1,10 +1,7 @@
 import type { APIContext } from "astro";
 import { vi } from "vitest";
 
-export function createMockRequest(overrides?: {
-  platform?: string;
-  transcript?: string;
-}): Request {
+export function createMockRequest(overrides?: { platform?: string; transcript?: string }): Request {
   const body = {
     platform: overrides?.platform || "youtube",
     transcript: overrides?.transcript || "Sample transcript for testing",

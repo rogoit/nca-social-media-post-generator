@@ -22,7 +22,10 @@ const HASHTAG_FIELDS = new Set<keyof GenerateResponse>([
 ]);
 
 export class ResponseParser {
-  static validateResponse(type: SocialMediaPlatform, response: Partial<GenerateResponse>): string | null {
+  static validateResponse(
+    type: SocialMediaPlatform,
+    response: Partial<GenerateResponse>
+  ): string | null {
     switch (type) {
       case "youtube":
         if (!response.title?.trim() || !response.description?.trim()) {

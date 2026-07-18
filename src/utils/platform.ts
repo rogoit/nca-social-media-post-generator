@@ -3,15 +3,22 @@ import { PLATFORM_CONFIGS, PLATFORM_PREFIXES } from "../config/constants.js";
 import { getElement, hideElement, showElement, setTextContent } from "./dom.js";
 
 const DISPLAYABLE_PLATFORMS: SocialMediaPlatform[] = [
-  "youtube", "linkedin", "twitter", "instagram", "tiktok",
+  "youtube",
+  "linkedin",
+  "twitter",
+  "instagram",
+  "tiktok",
 ];
 
 type PostField = "linkedinPost" | "twitterPost" | "instagramPost" | "tiktokPost";
 
-const POST_DISPLAY: Record<Exclude<SocialMediaPlatform, "youtube" | "keywords">, {
-  postField: PostField;
-  contentId: string;
-}> = {
+const POST_DISPLAY: Record<
+  Exclude<SocialMediaPlatform, "youtube" | "keywords">,
+  {
+    postField: PostField;
+    contentId: string;
+  }
+> = {
   linkedin: { postField: "linkedinPost", contentId: "linkedin-content-result" },
   twitter: { postField: "twitterPost", contentId: "twitter-content-result" },
   instagram: { postField: "instagramPost", contentId: "instagram-content-result" },
@@ -59,15 +66,23 @@ export class PlatformManager {
 
       tab!.classList.remove(
         "border-b-2",
-        "text-red-600", "border-red-600",
-        "text-blue-600", "border-blue-600",
-        "text-black", "border-black",
-        "text-pink-600", "border-pink-600",
+        "text-red-600",
+        "border-red-600",
+        "text-blue-600",
+        "border-blue-600",
+        "text-black",
+        "border-black",
+        "text-pink-600",
+        "border-pink-600",
         "text-gray-500"
       );
 
       if (isActive) {
-        tab!.classList.add("border-b-2", `text-${config.color.primary}`, `border-${config.color.primary}`);
+        tab!.classList.add(
+          "border-b-2",
+          `text-${config.color.primary}`,
+          `border-${config.color.primary}`
+        );
       } else {
         tab!.classList.add("text-gray-500");
       }
@@ -144,7 +159,10 @@ export class PlatformManager {
 
   private updateResultsVisibility(): void {
     for (const [platform, result] of Object.entries(this.results)) {
-      if (platform === this.currentPlatform && this.hasResultContent(platform as SocialMediaPlatform)) {
+      if (
+        platform === this.currentPlatform &&
+        this.hasResultContent(platform as SocialMediaPlatform)
+      ) {
         showElement(result!);
       } else {
         hideElement(result!);
@@ -154,7 +172,9 @@ export class PlatformManager {
 
   private hasResultContent(platform: SocialMediaPlatform): boolean {
     if (platform === "youtube") {
-      return !!(getElement("title-content").textContent || getElement("description-content").textContent);
+      return !!(
+        getElement("title-content").textContent || getElement("description-content").textContent
+      );
     }
     const config = POST_DISPLAY[platform as keyof typeof POST_DISPLAY];
     if (!config) return false;

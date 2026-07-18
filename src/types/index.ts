@@ -55,5 +55,3 @@ export interface KeywordState {
   detected: boolean;
   set: boolean;
 }
-
-

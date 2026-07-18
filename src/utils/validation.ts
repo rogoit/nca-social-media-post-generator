@@ -44,7 +44,11 @@ export function sanitizeApiKey(key?: string): string {
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 
-export function validateVideoFile(file: { name: string; size: number; type: string }): string | null {
+export function validateVideoFile(file: {
+  name: string;
+  size: number;
+  type: string;
+}): string | null {
   if (!file) {
     return "Bitte wähle eine Video-Datei aus.";
   }
