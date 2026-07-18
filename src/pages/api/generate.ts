@@ -4,7 +4,7 @@ import { validateTranscript, validateVideoDuration } from "../../utils/validatio
 import { MistralProvider } from "../../utils/ai-providers.js";
 import { ChatPrompts } from "../../config/chat-prompts.js";
 import { ResponseParser } from "../../utils/response-parser.js";
-import { AI_MODELS, PLATFORM_PREFIXES } from "../../config/constants.js";
+import { AI_MODELS } from "../../config/constants.js";
 import {
   TRANSCRIPT_RESPONSE_FORMAT,
   getYoutubeResponseFormat,
