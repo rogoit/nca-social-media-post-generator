@@ -2,15 +2,9 @@ import type { SocialMediaPlatform, GenerateResponse } from "../types/index.js";
 import { PLATFORM_CONFIGS, PLATFORM_PREFIXES } from "../config/constants.js";
 import { getElement, hideElement, showElement, setTextContent } from "./dom.js";
 
-const DISPLAYABLE_PLATFORMS: SocialMediaPlatform[] = [
-  "youtube",
-  "linkedin",
-  "twitter",
-  "instagram",
-  "tiktok",
-];
+const DISPLAYABLE_PLATFORMS: SocialMediaPlatform[] = ["youtube", "linkedin", "instagram", "tiktok"];
 
-type PostField = "linkedinPost" | "twitterPost" | "instagramPost" | "tiktokPost";
+type PostField = "linkedinPost" | "instagramPost" | "tiktokPost";
 
 const POST_DISPLAY: Record<
   Exclude<SocialMediaPlatform, "youtube" | "keywords">,
@@ -20,7 +14,6 @@ const POST_DISPLAY: Record<
   }
 > = {
   linkedin: { postField: "linkedinPost", contentId: "linkedin-content-result" },
-  twitter: { postField: "twitterPost", contentId: "twitter-content-result" },
   instagram: { postField: "instagramPost", contentId: "instagram-content-result" },
   tiktok: { postField: "tiktokPost", contentId: "tiktok-content-result" },
 };

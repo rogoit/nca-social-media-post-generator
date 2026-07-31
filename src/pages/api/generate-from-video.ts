@@ -1,143 +1,116 @@
 import type { APIRoute } from "astro";
-import { validateVideoFile } from "../../utils/validation.js";
-import { GoogleGeminiProvider, MistralProvider } from "../../utils/ai-providers.js";
-import { ChatPrompts } from "../../config/chat-prompts.js";
-import { ResponseParser } from "../../utils/response-parser.js";
-import {
-  TRANSCRIPT_RESPONSE_FORMAT,
-  getYoutubeResponseFormat,
-  LINKEDIN_RESPONSE_FORMAT,
-  TWITTER_RESPONSE_FORMAT,
-  INSTAGRAM_RESPONSE_FORMAT,
-  TIKTOK_RESPONSE_FORMAT,
-} from "../../config/schemas.js";
+import { validateVideoFile, validateVideoDuration } from "../../utils/validation.js";
+import { GoogleGeminiProvider } from "../../utils/ai-providers.js";
+import { GenerationSession } from "../../utils/generation-session.js";
+import type { GenerationPlatform } from "../../utils/generation-session.js";
+import { SseStream, sseResponse } from "../../utils/sse.js";
 import { jsonResponse } from "../../utils/api-helpers.js";
 
 const GOOGLE_GEMINI_API_KEY = import.meta.env.GOOGLE_GEMINI_API_KEY;
 const MISTRAL_API_KEY = import.meta.env.MISTRAL_API_KEY;
 
-let geminiProvider: GoogleGeminiProvider;
-let mistralProvider: MistralProvider;
+const PLATFORMS: GenerationPlatform[] = ["youtube", "linkedin", "instagram", "tiktok"];
 
-try {
-  if (GOOGLE_GEMINI_API_KEY) {
-    geminiProvider = new GoogleGeminiProvider(GOOGLE_GEMINI_API_KEY);
-  }
-  if (MISTRAL_API_KEY) {
-    mistralProvider = new MistralProvider(MISTRAL_API_KEY);
-  }
-} catch (error) {
-  console.error("Failed to initialize AI providers:", error);
-}
-
+/**
+ * SSE endpoint: upload a video, stream the whole pipeline out as events.
+ * Turn order: Gemini transcript extraction → Mistral chat (correction +
+ * keywords) → per-platform generation. The video Buffer is request-scoped
+ * and never written to disk.
+ */
 export const POST: APIRoute = async ({ request }) => {
-  try {
-    if (!geminiProvider) {
-      return jsonResponse(
-        { error: "Video-Verarbeitung nicht verfügbar. Bitte GOOGLE_GEMINI_API_KEY prüfen." },
-        503
-      );
-    }
-    if (!mistralProvider) {
-      return jsonResponse(
-        { error: "Text-Generierung nicht verfügbar. Bitte MISTRAL_API_KEY prüfen." },
-        503
-      );
-    }
-
-    // Parse multipart form data
-    const formData = await request.formData();
-    const videoFile = formData.get("video") as File | null;
-
-    if (!videoFile) {
-      return jsonResponse({ error: "Keine Video-Datei gefunden." }, 400);
-    }
-
-    // Validate video file
-    const validationError = validateVideoFile({
-      name: videoFile.name,
-      size: videoFile.size,
-      type: videoFile.type,
-    });
-    if (validationError) {
-      return jsonResponse({ error: validationError }, 400);
-    }
-
-    // Convert File to Buffer for Gemini
-    const arrayBuffer = await videoFile.arrayBuffer();
-    const videoBuffer = Buffer.from(arrayBuffer);
-
-    // Step 1: Extract raw transcript from video via Gemini
-    const { text: rawTranscript, model: transcriptModel } = await geminiProvider.extractTranscript(
-      videoBuffer,
-      videoFile.type
-    );
-
-    // Step 2: Use Mistral chat session to correct transcript + generate all platforms
-    mistralProvider.startChatSession();
-
-    // Turn 1: Correct transcript + extract keywords
-    const initialMessage = ChatPrompts.createInitialMessage(rawTranscript);
-    const { text: initialText, model } = await mistralProvider.sendChatMessage(
-      initialMessage,
-      TRANSCRIPT_RESPONSE_FORMAT
-    );
-
-    const transcriptResult = ResponseParser.parseResponse("youtube", initialText);
-    const keywordResult = ResponseParser.parseResponse("keywords", initialText);
-    const correctedTranscript = transcriptResult.transcript || rawTranscript;
-    const keywords = keywordResult.keywords || [];
-
-    // Turn 2: YouTube
-    const ytMsg = ChatPrompts.createPlatformMessage("youtube");
-    const { text: ytText } = await mistralProvider.sendChatMessage(
-      ytMsg,
-      getYoutubeResponseFormat()
-    );
-    const ytResult = ResponseParser.parseResponse("youtube", ytText);
-
-    // Turn 3: LinkedIn
-    const liMsg = ChatPrompts.createPlatformMessage("linkedin");
-    const { text: liText } = await mistralProvider.sendChatMessage(liMsg, LINKEDIN_RESPONSE_FORMAT);
-    const liResult = ResponseParser.parseResponse("linkedin", liText);
-
-    // Turn 4: Twitter
-    const twMsg = ChatPrompts.createPlatformMessage("twitter");
-    const { text: twText } = await mistralProvider.sendChatMessage(twMsg, TWITTER_RESPONSE_FORMAT);
-    const twResult = ResponseParser.parseResponse("twitter", twText);
-
-    // Turn 5: Instagram
-    const igMsg = ChatPrompts.createPlatformMessage("instagram");
-    const { text: igText } = await mistralProvider.sendChatMessage(
-      igMsg,
-      INSTAGRAM_RESPONSE_FORMAT
-    );
-    const igResult = ResponseParser.parseResponse("instagram", igText);
-
-    // Turn 6: TikTok
-    const ttMsg = ChatPrompts.createPlatformMessage("tiktok");
-    const { text: ttText } = await mistralProvider.sendChatMessage(ttMsg, TIKTOK_RESPONSE_FORMAT);
-    const ttResult = ResponseParser.parseResponse("tiktok", ttText);
-
-    // Return in format compatible with video upload UI
-    return jsonResponse({
-      transcript: correctedTranscript,
-      transcriptModel,
-      keywords,
-      platforms: {
-        youtube: { title: ytResult.title, description: ytResult.description, modelUsed: model },
-        linkedin: { linkedinPost: liResult.linkedinPost, modelUsed: model },
-        twitter: { twitterPost: twResult.twitterPost, modelUsed: model },
-        instagram: { instagramPost: igResult.instagramPost, modelUsed: model },
-        tiktok: { tiktokPost: ttResult.tiktokPost, modelUsed: model },
-      },
-      modelUsed: model,
-    });
-  } catch (error: any) {
-    console.error("Video generation error:", error);
+  if (!GOOGLE_GEMINI_API_KEY) {
     return jsonResponse(
-      { error: "Fehler bei der Video-Verarbeitung.", details: error.message },
-      500
+      { error: "Video-Verarbeitung nicht verfügbar. Bitte GOOGLE_GEMINI_API_KEY prüfen." },
+      503
     );
   }
+  if (!MISTRAL_API_KEY) {
+    return jsonResponse(
+      { error: "Text-Generierung nicht verfügbar. Bitte MISTRAL_API_KEY prüfen." },
+      503
+    );
+  }
+
+  // Multipart parsing happens BEFORE the SSE stream starts: request validation
+  // errors must still be plain JSON responses.
+  const formData = await request.formData();
+  const videoFile = formData.get("video") as File | null;
+  const videoDurationRaw = formData.get("videoDuration");
+  const videoDuration = typeof videoDurationRaw === "string" ? videoDurationRaw : undefined;
+
+  if (!videoFile) {
+    return jsonResponse({ error: "Keine Video-Datei gefunden." }, 400);
+  }
+
+  const validationError = validateVideoFile({
+    name: videoFile.name,
+    size: videoFile.size,
+    type: videoFile.type,
+  });
+  if (validationError) {
+    return jsonResponse({ error: validationError }, 400);
+  }
+  if (videoDuration) {
+    const durationError = validateVideoDuration(videoDuration);
+    if (durationError) {
+      return jsonResponse({ error: durationError }, 400);
+    }
+  }
+
+  const arrayBuffer = await videoFile.arrayBuffer();
+  let videoBuffer: Buffer | null = Buffer.from(arrayBuffer);
+  const mimeType = videoFile.type;
+
+  const sse = new SseStream();
+
+  (async () => {
+    try {
+      // Step 1: Gemini transcript extraction (video buffer discarded right after)
+      const gemini = new GoogleGeminiProvider(GOOGLE_GEMINI_API_KEY);
+      const { text: rawTranscript, model: transcriptModel } = await gemini.extractTranscript(
+        videoBuffer,
+        mimeType
+      );
+      videoBuffer = null;
+
+      sse.event("transcript_extracted", { transcriptModel });
+
+      // Step 2: Mistral chat session — correction + keywords + all platforms
+      const session = new GenerationSession(MISTRAL_API_KEY, (event) => sse.emitProgress(event));
+      const { correctedTranscript, keywords, model } = await session.initialize(rawTranscript);
+
+      sse.event("transcript_done", { transcript: correctedTranscript, keywords, modelUsed: model });
+
+      let lastModel = model;
+      for (const platform of PLATFORMS) {
+        try {
+          const result = await session.generatePlatform(platform, rawTranscript, {
+            videoDuration,
+          });
+          lastModel = result.modelUsed;
+          sse.sendPlatformDone(
+            platform,
+            result.response,
+            result.modelUsed,
+            result.humanizerWarnings
+          );
+        } catch (platformError: unknown) {
+          const message =
+            platformError instanceof Error ? platformError.message : String(platformError);
+          console.error(`Platform ${platform} generation failed:`, platformError);
+          sse.event("platform_error", { platform, message });
+        }
+      }
+
+      sse.sendComplete(lastModel);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("generate-from-video pipeline failed:", error);
+      sse.sendError("pipeline", message);
+    } finally {
+      sse.close();
+    }
+  })();
+
+  return sseResponse(sse);
 };

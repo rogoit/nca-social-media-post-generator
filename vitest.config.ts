@@ -12,10 +12,9 @@ export default defineConfig(({ mode }) => {
       // Load API keys from .env file
       env: {
         GOOGLE_GEMINI_API_KEY: env.GOOGLE_GEMINI_API_KEY,
-        ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+        MISTRAL_API_KEY: env.MISTRAL_API_KEY || "mock-mistral-key",
         GOOGLE_GEMINI_MODELS: env.GOOGLE_GEMINI_MODELS || "gemini-2.5-pro,gemini-2.5-flash",
-        ANTHROPIC_MODELS:
-          env.ANTHROPIC_MODELS || "claude-3-5-haiku-20241022,claude-3-5-sonnet-20241022",
+        MISTRAL_MODELS: env.MISTRAL_MODELS || "mistral-large-latest",
       },
       // Use projects for different test configurations
       projects: [

@@ -90,15 +90,6 @@ describe("ChatPrompts", () => {
       expect(msg).toContain("NUR Fakten aus dem Transkript");
     });
 
-    it("should create short Twitter message requesting JSON with twitterPost field", () => {
-      const msg = ChatPrompts.createPlatformMessage("twitter");
-      expect(msg).toContain("JSON-Objekt");
-      expect(msg).toContain('"twitterPost"');
-      expect(msg).not.toContain("TWITTER POST:");
-      expect(msg.length).toBeLessThan(1000);
-      expect(msg).toContain("NUR Fakten aus dem Transkript");
-    });
-
     it("should create Instagram message with required hashtags", () => {
       const msg = ChatPrompts.createPlatformMessage("instagram");
       expect(msg).toContain("JSON-Objekt");

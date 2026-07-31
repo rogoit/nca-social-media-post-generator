@@ -1,16 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.stubGlobal(
-  "import",
-  vi.hoisted(() => ({
-    meta: {
-      env: {
-        MISTRAL_API_KEY: "mock-mistral-key",
-      },
-    },
-  }))
-);
-
 const mockFetch = vi.fn() as any;
 vi.stubGlobal("fetch", mockFetch);
 
@@ -21,7 +10,7 @@ mockFetch.mockImplementation(async (url: string, options: any) => {
     const body = JSON.parse(options.body);
     if (body.messages) {
       const lastMsg = body.messages[body.messages.length - 1].content;
-      if (lastMsg.includes("Transkript") || lastMsg.includes("Deine ERSTE Aufgabe")) {
+      if (lastMsg.includes("Deine Aufgabe") || lastMsg.includes("Deine ERSTE Aufgabe")) {
         const content =
           mockResponses.transcript ||
           JSON.stringify({ transcript: "Test transcript", keywords: ["javascript"] });
@@ -52,7 +41,7 @@ describe("Generate Pipeline - Functional Tests", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     mockResponses.transcript = JSON.stringify({
-      transcript: "Test transcript",
+      transcript: "This is a test transcript that is long enough.",
       keywords: ["javascript"],
     });
     mockResponses.platform = JSON.stringify({
@@ -73,7 +62,7 @@ describe("Generate Pipeline - Functional Tests", () => {
   });
 
   describe("Full generation pipeline", () => {
-    it.skip("should generate YouTube content successfully", async () => {
+    it("should generate YouTube content successfully", async () => {
       const mockRequest = createMockRequest({
         transcript:
           "This is a test transcript that is long enough to pass validation and contains meaningful content about JavaScript development.",
@@ -91,7 +80,7 @@ describe("Generate Pipeline - Functional Tests", () => {
       expect(responseData.modelUsed).toBeDefined();
     });
 
-    it.skip("should generate keywords successfully", async () => {
+    it("should generate keywords successfully", async () => {
       mockResponses.transcript = JSON.stringify({
         transcript: "Test transcript",
         keywords: ["JavaScript", "React", "TypeScript"],
@@ -112,11 +101,10 @@ describe("Generate Pipeline - Functional Tests", () => {
       expect(responseData.modelUsed).toBeDefined();
     });
 
-    it.skip("should handle multiple platform types", async () => {
+    it("should handle multiple platform types", async () => {
       const platformMocks: Record<string, string> = {
         youtube: JSON.stringify({ title: "Test YouTube", description: "YouTube desc" }),
         linkedin: JSON.stringify({ linkedinPost: "LinkedIn post" }),
-        twitter: JSON.stringify({ twitterPost: "Twitter post #test" }),
         instagram: JSON.stringify({ instagramPost: "IG post #test" }),
         tiktok: JSON.stringify({ tiktokPost: "TikTok post" }),
       };
@@ -133,7 +121,7 @@ describe("Generate Pipeline - Functional Tests", () => {
       }
     });
 
-    it.skip("should include video duration when provided", async () => {
+    it("should include video duration when provided", async () => {
       const mockRequest = createMockRequest({
         transcript: "Test transcript content here.",
         type: "youtube",
@@ -148,7 +136,7 @@ describe("Generate Pipeline - Functional Tests", () => {
       expect(responseData.title).toBeDefined();
     });
 
-    it.skip("should include keywords when provided", async () => {
+    it("should include keywords when provided", async () => {
       const mockRequest = createMockRequest({
         transcript: "Test transcript content here.",
         type: "youtube",
@@ -163,7 +151,7 @@ describe("Generate Pipeline - Functional Tests", () => {
       expect(responseData.title).toBeDefined();
     });
 
-    it.skip("should clean transcript by removing single character at end", async () => {
+    it("should clean transcript by removing single character at end", async () => {
       const mockRequest = createMockRequest({
         transcript: "This is a test transcript that ends with a single character x",
         type: "youtube",
@@ -176,7 +164,7 @@ describe("Generate Pipeline - Functional Tests", () => {
       expect(responseData.transcriptCleaned).toBe(true);
     });
 
-    it.skip("should clean transcript by removing single letter with period at end (e.g., M.)", async () => {
+    it("should clean transcript by removing single letter with period at end (e.g., M.)", async () => {
       const mockRequest = createMockRequest({
         transcript: "This is a test transcript that ends with M.",
         type: "youtube",

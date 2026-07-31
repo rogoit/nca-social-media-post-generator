@@ -16,7 +16,6 @@ function normalizeHashtags(text: string): string {
 const HASHTAG_FIELDS = new Set<keyof GenerateResponse>([
   "description",
   "linkedinPost",
-  "twitterPost",
   "instagramPost",
   "tiktokPost",
 ]);
@@ -35,11 +34,6 @@ export class ResponseParser {
       case "linkedin":
         if (!response.linkedinPost?.trim()) {
           return "AI response missing LinkedIn post content";
-        }
-        break;
-      case "twitter":
-        if (!response.twitterPost?.trim()) {
-          return "AI response missing Twitter post content";
         }
         break;
       case "instagram":

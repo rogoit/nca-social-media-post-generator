@@ -66,18 +66,6 @@ export const LINKEDIN_RESPONSE_FORMAT = wrap(
   "linkedin_post"
 );
 
-export const TWITTER_RESPONSE_FORMAT = wrap(
-  {
-    type: "object",
-    properties: {
-      twitterPost: { type: "string" },
-    },
-    required: ["twitterPost"],
-    additionalProperties: false,
-  },
-  "twitter_post"
-);
-
 export const INSTAGRAM_RESPONSE_FORMAT = wrap(
   {
     type: "object",

@@ -88,13 +88,7 @@ export class SocialMediaApp {
   }
 
   private setupFormListeners(): void {
-    const platforms: SocialMediaPlatform[] = [
-      "youtube",
-      "linkedin",
-      "twitter",
-      "instagram",
-      "tiktok",
-    ];
+    const platforms: SocialMediaPlatform[] = ["youtube", "linkedin", "instagram", "tiktok"];
 
     platforms.forEach((platform) => {
       const form = getElement<HTMLFormElement>(`${PLATFORM_PREFIXES[platform]}-form`);
@@ -112,7 +106,6 @@ export class SocialMediaApp {
       { btnId: "copy-description-btn", contentId: "description-content" },
       { btnId: "copy-timestamps-btn", contentId: "timestamps-content" },
       { btnId: "copy-linkedin-btn", contentId: "linkedin-content-result" },
-      { btnId: "copy-twitter-btn", contentId: "twitter-content-result" },
       { btnId: "copy-instagram-btn", contentId: "instagram-content-result" },
       { btnId: "copy-tiktok-btn", contentId: "tiktok-content-result" },
     ];

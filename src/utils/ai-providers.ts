@@ -31,7 +31,8 @@ function isRetryableError(error: unknown): boolean {
 async function withRetry<T>(
   fn: () => Promise<T>,
   providerName: string,
-  maxRetries = 3
+  maxRetries = 3,
+  baseDelayMs = 2000
 ): Promise<T> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -45,7 +46,7 @@ async function withRetry<T>(
         throw error;
       }
 
-      const delayMs = 2000 * Math.pow(2, attempt);
+      const delayMs = baseDelayMs * Math.pow(2, attempt);
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.warn(
         `${providerName} retryable error, retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries}): ${errorMsg}`
@@ -109,6 +110,9 @@ export class MistralProvider implements AIProvider {
   private baseUrl = "https://api.mistral.ai/v1";
   private chatSession: { messages: Array<{ role: string; content: string }> } | null = null;
   private _currentModel: string = "";
+
+  /** Backoff base delay for retries. Overridable for tests; production default 2000ms. */
+  retryBaseDelayMs = 2000;
 
   get currentModel(): string {
     return this._currentModel;
@@ -197,18 +201,23 @@ export class MistralProvider implements AIProvider {
       throw new Error("Chat session not started. Call startChatSession() first.");
     }
 
-    return withRetry(async () => {
-      const messagesForRequest = [
-        ...this.chatSession!.messages,
-        { role: "user", content: message },
-      ];
+    return withRetry(
+      async () => {
+        const messagesForRequest = [
+          ...this.chatSession!.messages,
+          { role: "user", content: message },
+        ];
 
-      const text = await this.callApi(messagesForRequest, this._currentModel, responseFormat);
+        const text = await this.callApi(messagesForRequest, this._currentModel, responseFormat);
 
-      this.chatSession!.messages.push({ role: "user", content: message });
-      this.chatSession!.messages.push({ role: "assistant", content: text });
+        this.chatSession!.messages.push({ role: "user", content: message });
+        this.chatSession!.messages.push({ role: "assistant", content: text });
 
-      return { text, model: this._currentModel };
-    }, this.name);
+        return { text, model: this._currentModel };
+      },
+      this.name,
+      3,
+      this.retryBaseDelayMs
+    );
   }
 }

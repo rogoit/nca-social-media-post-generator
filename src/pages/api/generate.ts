@@ -1,236 +1,72 @@
 import type { APIRoute } from "astro";
 import type { GenerateRequest, GenerateResponse, SocialMediaPlatform } from "../../types/index.js";
 import { validateTranscript, validateVideoDuration } from "../../utils/validation.js";
-import { MistralProvider } from "../../utils/ai-providers.js";
-import { ChatPrompts } from "../../config/chat-prompts.js";
-import { ResponseParser } from "../../utils/response-parser.js";
-import { AI_MODELS } from "../../config/constants.js";
-import {
-  TRANSCRIPT_RESPONSE_FORMAT,
-  getYoutubeResponseFormat,
-  LINKEDIN_RESPONSE_FORMAT,
-  TWITTER_RESPONSE_FORMAT,
-  INSTAGRAM_RESPONSE_FORMAT,
-  TIKTOK_RESPONSE_FORMAT,
-} from "../../config/schemas.js";
+import { GenerationSession } from "../../utils/generation-session.js";
+import type { GenerationPlatform } from "../../utils/generation-session.js";
 import { jsonResponse } from "../../utils/api-helpers.js";
-import { lintPost, formatViolationsForRetry } from "../../utils/humanizer-lint.js";
 
 const MISTRAL_API_KEY = import.meta.env.MISTRAL_API_KEY;
 
-let mistralProvider: MistralProvider;
-
-// Chat session state: persists across requests for the same transcript
-let chatTranscript: string | null = null;
-let chatCorrectedTranscript: string | null = null;
-let chatKeywords: string[] = [];
-let chatModel: string = "";
-
-try {
-  if (MISTRAL_API_KEY) {
-    mistralProvider = new MistralProvider(MISTRAL_API_KEY);
-  }
-} catch (error) {
-  console.error("Failed to initialize AI providers:", error);
-}
-
-async function initializeChatSession(transcript: string): Promise<void> {
-  const initialMessage = ChatPrompts.createInitialMessage(transcript);
-  const { text: initialText, model } = await mistralProvider.sendChatMessage(
-    initialMessage,
-    TRANSCRIPT_RESPONSE_FORMAT
-  );
-
-  const transcriptResult = ResponseParser.parseResponse("youtube", initialText);
-  const keywordResult = ResponseParser.parseResponse("keywords", initialText);
-
-  chatTranscript = transcript;
-  chatCorrectedTranscript = transcriptResult.transcript || transcript;
-  chatKeywords = keywordResult.keywords || [];
-  chatModel = model;
-}
-
-async function ensureChatSession(transcript: string): Promise<void> {
-  if (chatTranscript === transcript && chatCorrectedTranscript) {
-    return;
-  }
-
-  mistralProvider.startChatSession();
-  await initializeChatSession(transcript);
-}
-
-async function restartChatOnFallbackModel(transcript: string): Promise<boolean> {
-  const currentModelIndex = AI_MODELS.mistral.indexOf(chatModel);
-  const nextModel = AI_MODELS.mistral[currentModelIndex + 1];
-
-  if (!nextModel) {
-    return false;
-  }
-
-  console.warn(`Restarting chat session on fallback model: ${nextModel}`);
-
-  chatTranscript = null;
-  chatCorrectedTranscript = null;
-
-  mistralProvider.startChatSessionWithModel(nextModel);
-  await initializeChatSession(transcript);
-
-  return true;
-}
-
-const PLATFORM_RESPONSE_FORMATS = {
-  linkedin: LINKEDIN_RESPONSE_FORMAT,
-  twitter: TWITTER_RESPONSE_FORMAT,
-  instagram: INSTAGRAM_RESPONSE_FORMAT,
-  tiktok: TIKTOK_RESPONSE_FORMAT,
-} as const;
-
 export const POST: APIRoute = async ({ request }) => {
   try {
-    if (!mistralProvider) {
+    if (!MISTRAL_API_KEY) {
       return jsonResponse(
         { error: "AI-Dienste nicht verfügbar. Bitte MISTRAL_API_KEY prüfen." },
         503
       );
     }
 
-    // Parse and validate request
     const body = await parseAndValidateRequest(request);
     if ("error" in body) {
       return body.error;
     }
 
     const { type = "youtube", videoDuration } = body;
-    let { transcript } = body;
-    let transcriptCleaned = false;
+    const cleanedResult = cleanTranscript(body.transcript);
+    const transcript = cleanedResult.transcript;
+    const transcriptCleaned = cleanedResult.cleaned;
 
-    // Clean transcript: Remove single characters at the end
-    const cleanedResult = cleanTranscript(transcript);
-    transcript = cleanedResult.transcript;
-    transcriptCleaned = cleanedResult.cleaned;
+    // Request-scoped session — no shared state across requests.
+    const session = new GenerationSession(MISTRAL_API_KEY);
+    await session.initialize(transcript);
 
-    // For keywords type: initialize chat session and return corrected keywords
     if (type === "keywords") {
-      await ensureChatSession(transcript);
       return jsonResponse({
-        keywords: chatKeywords,
+        keywords: session.keywords,
         transcriptCleaned,
-        modelUsed: chatModel,
+        modelUsed: session.currentModel,
       });
     }
 
-    // For platform types: ensure chat session exists, then generate via chat
-    await ensureChatSession(transcript);
+    const result = await session.generatePlatform(type as GenerationPlatform, transcript, {
+      videoDuration,
+    });
 
-    const platformMessage = ChatPrompts.createPlatformMessage(
-      type as "youtube" | "linkedin" | "twitter" | "instagram" | "tiktok",
-      { videoDuration }
-    );
-    const platformResponseFormat =
-      type === "youtube"
-        ? getYoutubeResponseFormat(videoDuration)
-        : PLATFORM_RESPONSE_FORMATS[type as keyof typeof PLATFORM_RESPONSE_FORMATS];
-
-    let text: string;
-    let model: string;
-    try {
-      const result = await mistralProvider.sendChatMessage(platformMessage, platformResponseFormat);
-      text = result.text;
-      model = result.model;
-    } catch (error: any) {
-      // If retries exhausted, try fallback model with fresh session
-      const is503or429 =
-        error.message && /\[503\s|\[429\s|Resource has been exhausted/i.test(error.message);
-      if (is503or429 && (await restartChatOnFallbackModel(transcript))) {
-        console.warn(`Retrying platform ${type} on fallback model ${chatModel}`);
-        const result = await mistralProvider.sendChatMessage(
-          platformMessage,
-          platformResponseFormat
-        );
-        text = result.text;
-        model = result.model;
-      } else {
-        throw error;
-      }
-    }
-
-    // Parse the response based on platform
-    const parsedResponse = ResponseParser.parseResponse(type, text);
-
-    // Validate that the response contains meaningful content
-    const validationError = ResponseParser.validateResponse(type, parsedResponse);
-    if (validationError) {
-      return jsonResponse(
-        { error: "AI-Antwort enthält keine gültigen Inhalte", details: validationError },
-        502
-      );
-    }
-
-    // Humanizer lint: scan Gemini output for KI-Marker-Vokabular (Pattern 64) and
-    // Fake-Analyse-Anhang (Pattern 66). On violation, retry once via the existing
-    // chat session with the forbidden words fed back. If still dirty, keep the
-    // cleaner version and surface warnings to the UI.
-    let finalText = text;
-    let humanizerWarnings: string[] = [];
-    const humanizerReport = lintPost(text);
-    if (humanizerReport.blocked) {
-      const forbiddenList = formatViolationsForRetry(humanizerReport);
-      const retryMessage = `Überarbeite deine letzte Antwort. Ersetze unbedingt diese Wörter und Muster: ${forbiddenList}. Behalte alle Fakten, Zahlen, Aussagen und das JSON-Format bei. Gib NUR das überarbeitete JSON-Objekt zurück.`;
-      try {
-        const retryResult = await mistralProvider.sendChatMessage(
-          retryMessage,
-          platformResponseFormat
-        );
-        const retryReport = lintPost(retryResult.text);
-        if (!retryReport.blocked) {
-          finalText = retryResult.text;
-        } else if (retryReport.violations.length < humanizerReport.violations.length) {
-          finalText = retryResult.text;
-          humanizerWarnings = Array.from(new Set(retryReport.violations.map((v) => v.word)));
-        } else {
-          humanizerWarnings = Array.from(new Set(humanizerReport.violations.map((v) => v.word)));
-        }
-      } catch (retryError) {
-        console.warn("Humanizer retry failed:", retryError);
-        humanizerWarnings = Array.from(new Set(humanizerReport.violations.map((v) => v.word)));
-      }
-    }
-
-    // Re-parse if humanizer changed the text
-    const finalParsedResponse =
-      finalText !== text ? ResponseParser.parseResponse(type, finalText) : parsedResponse;
-
-    // For YouTube: use the corrected transcript from the chat session
-    if (type === "youtube") {
-      finalParsedResponse.transcript = chatCorrectedTranscript || undefined;
-    }
-
-    // Create final response
     const responseData: GenerateResponse = {
-      ...finalParsedResponse,
+      ...result.response,
       transcriptCleaned,
-      modelUsed: model,
-      humanizerWarnings: humanizerWarnings.length > 0 ? humanizerWarnings : undefined,
+      modelUsed: result.modelUsed,
+      humanizerWarnings: result.humanizerWarnings,
     };
 
     return jsonResponse(responseData);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const details = error instanceof Error ? error.message : String(error);
     console.error("Unerwarteter Fehler:", error);
 
     if (
-      error.message?.includes("All AI providers failed") ||
-      error.message?.includes("Chat session")
+      details.includes("All AI providers failed") ||
+      details.includes("Chat session") ||
+      details.includes("AI-Antwort")
     ) {
+      const isValidation = details.includes("AI-Antwort");
       return jsonResponse(
-        { error: "Inhaltsgenerierung fehlgeschlagen", details: error.message },
-        503
+        { error: isValidation ? details : "Inhaltsgenerierung fehlgeschlagen", details },
+        isValidation ? 502 : 503
       );
     }
 
-    return jsonResponse(
-      { error: "Unerwarteter Fehler beim Generieren des Inhalts", details: error.message },
-      500
-    );
+    return jsonResponse({ error: "Unerwarteter Fehler beim Generieren des Inhalts", details }, 500);
   }
 };
 
@@ -257,7 +93,6 @@ async function parseAndValidateRequest(
   const validTypes: SocialMediaPlatform[] = [
     "youtube",
     "linkedin",
-    "twitter",
     "instagram",
     "tiktok",
     "keywords",
@@ -287,9 +122,8 @@ function cleanTranscript(transcript: string): { transcript: string; cleaned: boo
     const lastWord = words[words.length - 1];
     if (lastWord.length === 1 || /^[A-Za-z]\.$/.test(lastWord)) {
       words.pop();
-      const cleanedTranscript = words.join(" ");
       console.log("Einzelnes Zeichen/Abkürzung am Ende des Transkripts wurde entfernt.");
-      return { transcript: cleanedTranscript, cleaned: true };
+      return { transcript: words.join(" "), cleaned: true };
     }
   }
   return { transcript, cleaned: false };

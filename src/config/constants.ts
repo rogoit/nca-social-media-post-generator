@@ -3,7 +3,6 @@ import type { SocialMediaPlatform, PlatformConfig } from "../types/index.js";
 export const PLATFORM_PREFIXES: Record<SocialMediaPlatform, string> = {
   youtube: "yt",
   linkedin: "li",
-  twitter: "tw",
   instagram: "ig",
   tiktok: "tt",
   keywords: "kw",
@@ -14,7 +13,6 @@ export const VALIDATION_LIMITS = {
 } as const;
 
 export const CHARACTER_LIMITS = {
-  twitter: 280,
   instagram: { min: 500, max: 800 },
   youtube: { description: 1500 },
   linkedin: { min: 1000, max: 1500 },
@@ -62,19 +60,6 @@ export const PLATFORM_CONFIGS: Record<SocialMediaPlatform, PlatformConfig> = {
     color: {
       primary: "blue-600",
       secondary: "blue-700",
-    },
-  },
-  twitter: {
-    name: "Twitter",
-    endpoint: "twitter",
-    spinner: "twitter-spinner",
-    result: "tw-result",
-    color: {
-      primary: "black",
-      secondary: "gray-800",
-    },
-    characterLimits: {
-      max: CHARACTER_LIMITS.twitter,
     },
   },
   instagram: {

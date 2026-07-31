@@ -1,6 +1,6 @@
 import { GLOBAL_PROMPT_HELPERS } from "./prompts.js";
 
-type ChatPlatform = "youtube" | "linkedin" | "twitter" | "instagram" | "tiktok";
+type ChatPlatform = "youtube" | "linkedin" | "instagram" | "tiktok";
 
 interface PlatformMessageOptions {
   videoDuration?: string;
@@ -49,8 +49,6 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
         return this.youtubeMessage(options.videoDuration);
       case "linkedin":
         return this.linkedinMessage();
-      case "twitter":
-        return this.twitterMessage();
       case "instagram":
         return this.instagramMessage();
       case "tiktok":
@@ -87,18 +85,6 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
 - Abschluss: Motivierende Frage
 - 3-5 Hashtags am Ende
 - NUR passende Tools/Technologien
-- NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.
-
-Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
-  }
-
-  private static twitterMessage(): string {
-    return `Erstelle jetzt einen Twitter-Post basierend auf dem korrigierten Transkript. Gib ein JSON-Objekt mit dem Feld "twitterPost" zurück:
-
-- Max 280 Zeichen inkl. Hashtags
-- Meinungsstark, diskussionsfördernd
-- KEINE Emojis
-- 1-2 Hashtags
 - NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;

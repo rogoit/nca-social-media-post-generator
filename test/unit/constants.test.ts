@@ -16,7 +16,6 @@ describe("Constants Configuration", () => {
 
   describe("CHARACTER_LIMITS", () => {
     it("should have character limits for all platforms", () => {
-      expect(CHARACTER_LIMITS.twitter).toBe(280);
       expect(CHARACTER_LIMITS.instagram.min).toBe(500);
       expect(CHARACTER_LIMITS.instagram.max).toBe(800);
       expect(CHARACTER_LIMITS.youtube.description).toBe(1500);
@@ -32,7 +31,6 @@ describe("Constants Configuration", () => {
       const platforms: SocialMediaPlatform[] = [
         "youtube",
         "linkedin",
-        "twitter",
         "instagram",
         "tiktok",
         "keywords",
@@ -51,7 +49,6 @@ describe("Constants Configuration", () => {
     it("should have proper color configurations", () => {
       expect(PLATFORM_CONFIGS.youtube.color.primary).toBe("red-600");
       expect(PLATFORM_CONFIGS.linkedin.color.primary).toBe("blue-600");
-      expect(PLATFORM_CONFIGS.twitter.color.primary).toBe("black");
       expect(PLATFORM_CONFIGS.instagram.color.primary).toBe("pink-500");
       expect(PLATFORM_CONFIGS.tiktok.color.primary).toBe("black");
     });

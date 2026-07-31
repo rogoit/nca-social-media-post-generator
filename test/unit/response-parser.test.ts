@@ -46,16 +46,6 @@ describe("ResponseParser", () => {
       expect(result.linkedinPost).toContain("JavaScript sprechen");
     });
 
-    it("should parse Twitter JSON response correctly", () => {
-      const mockResponse = JSON.stringify({
-        twitterPost: "JavaScript 2025 bringt spannende neue Features! #javascript #webdev",
-      });
-
-      const result = ResponseParser.parseResponse("twitter", mockResponse);
-
-      expect(result.twitterPost).toContain("JavaScript 2025 bringt");
-    });
-
     it("should parse Instagram JSON response correctly", () => {
       const mockResponse = JSON.stringify({
         instagramPost: "JavaScript bleibt 2025 unverzichtbar. #nca #duisburg #ncatestify",
@@ -131,18 +121,6 @@ describe("ResponseParser", () => {
       expect(result.linkedinPost).toContain("#vibecoding");
       expect(result.linkedinPost).toContain("#javascript");
       expect(result.linkedinPost).not.toContain("#VibeCoding");
-    });
-
-    it("should normalize hashtags to lowercase in Twitter posts", () => {
-      const mockResponse = JSON.stringify({
-        twitterPost: "New tutorial on #ReactJS and #TypeScript! #CodingTips",
-      });
-
-      const result = ResponseParser.parseResponse("twitter", mockResponse);
-
-      expect(result.twitterPost).toContain("#reactjs");
-      expect(result.twitterPost).toContain("#typescript");
-      expect(result.twitterPost).not.toContain("#ReactJS");
     });
 
     it("should normalize hashtags to lowercase in Instagram posts", () => {
@@ -225,7 +203,6 @@ describe("ResponseParser", () => {
     it("should strip en-dash from platform posts", () => {
       const mockResponse = JSON.stringify({
         linkedinPost: "Post – mit – vielen – Strichen",
-        twitterPost: "Tweet — test",
       });
 
       const result = ResponseParser.parseResponse("linkedin", mockResponse);
@@ -253,7 +230,7 @@ describe("ResponseParser", () => {
 
     it("should validate platform posts", () => {
       expect(ResponseParser.validateResponse("linkedin", { linkedinPost: "post" })).toBeNull();
-      expect(ResponseParser.validateResponse("twitter", { twitterPost: "" })).not.toBeNull();
+      expect(ResponseParser.validateResponse("linkedin", { linkedinPost: "" })).not.toBeNull();
     });
   });
 });
