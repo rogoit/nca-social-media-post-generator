@@ -1,6 +1,7 @@
 import { defineConfig } from "astro/config";
 import { loadEnv } from "vite";
 import tailwind from "@astrojs/tailwind";
+import react from "@astrojs/react";
 import node from "@astrojs/node";
 
 const env = loadEnv(process.env.NODE_ENV || "development", process.cwd(), "");
@@ -24,7 +25,7 @@ for (const key of RUNTIME_ENV_KEYS) {
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [tailwind()],
+  integrations: [tailwind(), react()],
   output: "server",
   adapter: node({
     mode: "standalone",
