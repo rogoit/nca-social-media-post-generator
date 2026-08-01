@@ -26,3 +26,7 @@ Thumbs.db
 # Claude Code
 .claude/
 !task.md
+
+# This project keeps developer docs in docs/ (global gitignore excludes docs/)
+!docs/
+!docs/**
