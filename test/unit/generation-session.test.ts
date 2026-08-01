@@ -24,14 +24,6 @@ function respondOnce(content: string | object) {
   }));
 }
 
-function respondErrorOnce(status: number, body: string) {
-  mockFetch.mockImplementationOnce(async () => ({
-    ok: false,
-    status,
-    text: async () => body,
-  }));
-}
-
 const TRANSCRIPT = "Das hier ist ein langes Test Transkript mit genug Inhalt für die Validierung.";
 
 describe("GenerationSession", () => {
