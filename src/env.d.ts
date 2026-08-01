@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly EDITOR_PASSWORD?: string;
   readonly MISTRAL_API_KEY?: string;
   readonly MISTRAL_MODELS?: string;
+  readonly OLLAMA_API_KEY?: string;
+  readonly OLLAMA_MODEL?: string;
 }
 
 interface ImportMeta {
