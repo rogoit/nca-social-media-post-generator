@@ -15,9 +15,9 @@ export interface AIProvider {
   ): Promise<{ text: string; model: string }>;
 }
 
-function isRetryableError(error: unknown): boolean {
+export function isRetryableError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return /\[503\s|503 Service Unavailable|\[429\s|429 Too Many Requests|Resource has been exhausted/i.test(
+  return /\[503\]|\[429\]|503 Service Unavailable|429 Too Many Requests|Resource has been exhausted|rate_limited|Rate limit exceeded/i.test(
     message
   );
 }
@@ -171,6 +171,101 @@ export class MistralProvider implements AIProvider {
         this.chatSession!.messages.push({ role: "assistant", content: text });
 
         return { text, model: this._currentModel };
+      },
+      this.name,
+      3,
+      this.retryBaseDelayMs
+    );
+  }
+}
+
+export class OllamaProvider implements AIProvider {
+  readonly name = "Ollama";
+  readonly models: readonly string[];
+  private apiKey: string;
+  private baseUrl = "https://ollama.com/api";
+  private chatSession: { messages: Array<{ role: string; content: string }> } | null = null;
+  private _currentModel: string = "";
+
+  retryBaseDelayMs = 2000;
+
+  get currentModel(): string {
+    return this._currentModel;
+  }
+
+  constructor(apiKey: string, model?: string) {
+    this.apiKey = apiKey;
+    const modelName = model || AI_MODELS.ollama;
+    this.models = [modelName];
+  }
+
+  private async callApi(
+    messages: Array<{ role: string; content: string }>,
+    model: string,
+    responseFormat?: {
+      type: "json_schema";
+      json_schema: { schema: object; name: string; strict: true };
+    },
+    timeoutMs = 120000
+  ): Promise<string> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const body: Record<string, unknown> = { model, messages };
+    if (responseFormat) {
+      body.response_format = responseFormat;
+    }
+
+    const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`[${response.status}] ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || "";
+  }
+
+  startChatSession(): void {
+    this._currentModel = this.models[0];
+    this.chatSession = { messages: [] };
+  }
+
+  async sendChatMessage(
+    message: string,
+    responseFormat?: {
+      type: "json_schema";
+      json_schema: { schema: object; name: string; strict: true };
+    }
+  ): Promise<{ text: string; model: string }> {
+    if (!this.chatSession) {
+      throw new Error("Chat session not started. Call startChatSession() first.");
+    }
+
+    return withRetry(
+      async () => {
+        const messagesForRequest = [
+          ...this.chatSession!.messages,
+          { role: "user", content: message },
+        ];
+
+        const text = await this.callApi(messagesForRequest, this._currentModel, responseFormat);
+
+        this.chatSession!.messages.push({ role: "user", content: message });
+        this.chatSession!.messages.push({ role: "assistant", content: text });
+
+        return { text, model: `Ollama/${this._currentModel}` };
       },
       this.name,
       3,
