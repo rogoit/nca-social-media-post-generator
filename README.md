@@ -21,7 +21,7 @@ The project is under **MIT license** and open for contributions. You can support
 ## Technology Stack
 
 - **Framework**: [Astro](https://astro.build/) (SSR, Node adapter) with [TailwindCSS](https://tailwindcss.com/) and [React islands](https://docs.astro.build/en/concepts/islands/) + [nanostores](https://github.com/nanostores/nanostores)
-- **AI**: Google Gemini (video → transcript), Mistral (multi-turn chat for all text with strict JSON schemas)
+- **AI**: Mistral (Voxtral for video transcription + chat-based text generation with strict JSON schemas); ffmpeg for local audio extraction
 - **Language**: TypeScript
 - **Tests**: Vitest (unit / functional / real tiers)
 - **CI/CD**: GitLab pipeline (test → docker build → deploy)
@@ -56,20 +56,18 @@ The project is under **MIT license** and open for contributions. You can support
    ```
    EDITOR_ADMIN=your-login-name
    EDITOR_PASSWORD=your-login-password
-   GOOGLE_GEMINI_API_KEY=your-key-here
    MISTRAL_API_KEY=your-key-here
    ```
 
    Optional model overrides (comma-separated, tried in order):
 
    ```
-   GOOGLE_GEMINI_MODELS=gemini-2.5-pro,gemini-2.5-flash
    MISTRAL_MODELS=mistral-large-latest,mistral-small-latest
    ```
 
    Keys:
-   - **Google Gemini**: [Google AI Studio](https://aistudio.google.com/app/apikey) → create API key (needed for the video-upload path)
-   - **Mistral**: [Mistral console](https://console.mistral.ai/) → API keys section (drives all text generation)
+   - **Mistral**: [Mistral console](https://console.mistral.ai/) → API keys section (drives text generation AND video transcription via Voxtral)
+   - **ffmpeg**: system binary, needed only for the video upload flow. Installed in the Docker image; for local dev install via your package manager.
 
 4. Start the development server:
    ```bash

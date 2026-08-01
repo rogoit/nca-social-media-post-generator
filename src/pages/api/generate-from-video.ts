@@ -1,32 +1,27 @@
 import type { APIRoute } from "astro";
 import { validateVideoFile, validateVideoDuration } from "../../utils/validation.js";
-import { GoogleGeminiProvider } from "../../utils/ai-providers.js";
+import { extractAudioToWav, cleanupWorkDir } from "../../utils/audio-extraction.js";
+import { transcribeWavFile } from "../../utils/transcriber.js";
 import { GenerationSession } from "../../utils/generation-session.js";
 import type { GenerationPlatform } from "../../utils/generation-session.js";
 import { SseStream, sseResponse } from "../../utils/sse.js";
 import { jsonResponse } from "../../utils/api-helpers.js";
 
-const GOOGLE_GEMINI_API_KEY = import.meta.env.GOOGLE_GEMINI_API_KEY;
 const MISTRAL_API_KEY = import.meta.env.MISTRAL_API_KEY;
 
 const PLATFORMS: GenerationPlatform[] = ["youtube", "linkedin", "instagram", "tiktok"];
 
 /**
  * SSE endpoint: upload a video, stream the whole pipeline out as events.
- * Turn order: Gemini transcript extraction → Mistral chat (correction +
- * keywords) → per-platform generation. The video Buffer is request-scoped
- * and never written to disk.
+ * Pipeline: video → ffmpeg audio WAV → Mistral Voxtral transcription →
+ * Mistral chat session (correction, keywords, per-platform content).
+ * The video Buffer and the temp WAV are request-scoped; the temp dir is
+ * removed once transcription returns. Nothing is persisted server-side.
  */
 export const POST: APIRoute = async ({ request }) => {
-  if (!GOOGLE_GEMINI_API_KEY) {
-    return jsonResponse(
-      { error: "Video-Verarbeitung nicht verfügbar. Bitte GOOGLE_GEMINI_API_KEY prüfen." },
-      503
-    );
-  }
   if (!MISTRAL_API_KEY) {
     return jsonResponse(
-      { error: "Text-Generierung nicht verfügbar. Bitte MISTRAL_API_KEY prüfen." },
+      { error: "Verarbeitung nicht verfügbar. Bitte MISTRAL_API_KEY prüfen." },
       503
     );
   }
@@ -58,24 +53,37 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const arrayBuffer = await videoFile.arrayBuffer();
-  let videoBuffer: Buffer | null = Buffer.from(arrayBuffer);
-  const mimeType = videoFile.type;
+  const videoBuffer: Buffer = Buffer.from(arrayBuffer);
+  const inputSuffix = (() => {
+    const name = videoFile.name?.toLowerCase() ?? "";
+    if (name.endsWith(".webm")) return ".webm";
+    if (name.endsWith(".mov")) return ".mov";
+    return ".mp4";
+  })();
 
   const sse = new SseStream();
 
   (async () => {
+    let workDir: string | null = null;
     try {
-      // Step 1: Gemini transcript extraction (video buffer discarded right after)
-      const gemini = new GoogleGeminiProvider(GOOGLE_GEMINI_API_KEY);
-      const { text: rawTranscript, model: transcriptModel } = await gemini.extractTranscript(
-        videoBuffer,
-        mimeType
-      );
-      videoBuffer = null;
+      // Step 1: video bytes → audio WAV (ffmpeg, temp dir, discarded after)
+      sse.event("extraction_started", {});
+      const { wavPath, workDir: dir } = await extractAudioToWav(videoBuffer, inputSuffix);
+      workDir = dir;
 
+      // Step 2: WAV → raw transcript via Mistral Voxtral
+      const { text: rawTranscript, model: transcriptModel } = await transcribeWavFile(
+        wavPath,
+        MISTRAL_API_KEY,
+        { language: "de" }
+      );
       sse.event("transcript_extracted", { transcriptModel });
 
-      // Step 2: Mistral chat session — correction + keywords + all platforms
+      // Temp dir cleanup can already happen at this point
+      await cleanupWorkDir(workDir);
+      workDir = null;
+
+      // Step 3: Mistral chat session — correction + keywords + all platforms
       const session = new GenerationSession(MISTRAL_API_KEY, (event) => sse.emitProgress(event));
       const { correctedTranscript, keywords, model } = await session.initialize(rawTranscript);
 
@@ -108,6 +116,11 @@ export const POST: APIRoute = async ({ request }) => {
       console.error("generate-from-video pipeline failed:", error);
       sse.sendError("pipeline", message);
     } finally {
+      if (workDir) {
+        await cleanupWorkDir(workDir).catch((cleanupErr) =>
+          console.warn("Failed to clean up temp dir:", cleanupErr)
+        );
+      }
       sse.close();
     }
   })();

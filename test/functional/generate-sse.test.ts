@@ -3,6 +3,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockFetch = vi.fn() as any;
 vi.stubGlobal("fetch", mockFetch);
 
+// Stub the ffmpeg-based audio extraction — the route tests target the API
+// contract, not ffmpeg invocation. Audio extraction has its own unit tests.
+vi.mock("../../src/utils/audio-extraction.js", () => ({
+  extractAudioToWav: vi.fn(async () => ({
+    wavPath: "/tmp/fake/audio.wav",
+    workDir: "/tmp/fake",
+  })),
+  cleanupWorkDir: vi.fn(async () => {}),
+}));
+
+// Stub the Voxtral transcription — the transcriber has its own unit tests.
+// The route test needs to control fetch ordering for the SSE pipeline.
+vi.mock("../../src/utils/transcriber.js", () => ({
+  transcribeWavFile: vi.fn(async () => ({
+    text: "Roh-Transkript aus dem Video.",
+    model: "voxtral-mini-latest",
+  })),
+}));
+
 interface SseEvent {
   event: string;
   data: any;
@@ -223,13 +242,8 @@ describe("generate-from-video SSE endpoint", () => {
   }
 
   it("should stream the full pipeline for a valid video upload", async () => {
-    // Gemini transcript extraction (Google API shape)
-    mockFetch.mockImplementationOnce(async () => ({
-      ok: true,
-      json: async () => ({
-        candidates: [{ content: { parts: [{ text: "Roh-Transkript aus dem Video." }] } }],
-      }),
-    }));
+    // Voxtral transcription is stubbed via vi.mock — no fetch call for it.
+    // mockFetch is used only for Mistral chat turns.
     mockMistralTurns();
 
     const response = await POST({ request: videoFormRequest({}) });
@@ -239,6 +253,8 @@ describe("generate-from-video SSE endpoint", () => {
     const events = await readSseEvents(response);
     const names = events.map((e) => e.event);
 
+    expect(names).toContain("extraction_started");
+    expect(names).toContain("transcript_extracted");
     expect(names).toContain("transcript_done");
     expect(events.filter((e) => e.event === "platform_done")).toHaveLength(4);
     expect(names[names.length - 1]).toBe("complete");

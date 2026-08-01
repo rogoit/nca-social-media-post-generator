@@ -18,14 +18,14 @@
 │   per-platform retry)                 │                        │
 │        └────────────┬─────────────────┴──────────┬────────────┘
 │                     ▼                            ▼
-│              GenerationSession          GoogleGeminiProvider
-│              (Mistral chat,                (video → transcript)
+│              GenerationSession          ffmpeg → Voxtral
+│              (Mistral chat,                 (video → audio → text)
 │               Humanizer lint,
 │               model fallback)
 └──────────────────────────────────────────────────────────────────┘
                │                                  │
                ▼                                  ▼
-         Mistral API                      Google Generative Language API
+         Mistral API                      Mistral API (Voxtral)
 ```
 
 ## Request flows
@@ -46,7 +46,7 @@
 
 1. User drops an MP4/MOV/WebM file (≤100 MB). No keyword step.
 2. Frontend POSTs multipart to `/api/generate-from-video` (SSE).
-3. Server: `GoogleGeminiProvider.extractTranscript(buffer)` → raw transcript; the Buffer is then discarded (never written to disk).
+3. Server: `ffmpeg` extracts audio to WAV → Mistral Voxtral transcribes → raw transcript; the video Buffer and temp WAV are discarded (never persisted to disk).
 4. From here the flow is **identical** to the caption flow: same `GenerationSession`, same SSE event contract, same cards.
 
 ### Per-platform retry
@@ -87,7 +87,9 @@ Both SSE endpoints emit the identical contract — the frontend does not disting
 
 - `src/pages/api/` — `generate.ts` (JSON), `generate-all.ts` (SSE), `generate-from-video.ts` (SSE), `login.ts`, `logout.ts`
 - `src/utils/generation-session.ts` — request-scoped chat session (see [pipeline.md](pipeline.md))
-- `src/utils/ai-providers.ts` — `MistralProvider` (chat, retry, fallback-aware), `GoogleGeminiProvider` (video transcript)
+- `src/utils/ai-providers.ts` — `MistralProvider` (chat, retry, fallback-aware)
+- `src/utils/transcriber.ts` — Voxtral audio transcription (Mistral audio API)
+- `src/utils/audio-extraction.ts` — ffmpeg video→WAV extraction (temp dir, request-scoped)
 - `src/utils/sse.ts` — `SseStream` wire formatting + response headers
 - `src/utils/humanizer-lint.ts` — German AI-slop detector (hard-block words, cluster threshold, fake-analysis patterns)
 - `src/utils/response-parser.ts` — JSON parse + dash/hashtag normalization

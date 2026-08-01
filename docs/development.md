@@ -9,19 +9,21 @@ cp .env.example .env   # if absent, create manually:
 
 Required env vars (startup validation refuses to boot without them):
 
-| Variable                | Purpose                                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------- |
-| `EDITOR_ADMIN`          | Login username                                                                           |
-| `EDITOR_PASSWORD`       | Login password                                                                           |
-| `GOOGLE_GEMINI_API_KEY` | Gemini key for video transcription ([AI Studio](https://aistudio.google.com/app/apikey)) |
-| `MISTRAL_API_KEY`       | Mistral key for text generation ([console](https://console.mistral.ai/))                 |
+| Variable          | Purpose                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
+| `EDITOR_ADMIN`    | Login username                                                                                   |
+| `EDITOR_PASSWORD` | Login password                                                                                   |
+| `MISTRAL_API_KEY` | Mistral key for text generation AND video transcription ([console](https://console.mistral.ai/)) |
 
 Optional:
 
-| Variable               | Default                                                             |
-| ---------------------- | ------------------------------------------------------------------- |
-| `GOOGLE_GEMINI_MODELS` | `gemini-2.5-pro,gemini-2.5-flash`                                   |
-| `MISTRAL_MODELS`       | `mistral-large-latest` — comma-separated, tries in order on 503/429 |
+| Variable         | Default                                                             |
+| ---------------- | ------------------------------------------------------------------- |
+| `MISTRAL_MODELS` | `mistral-large-latest` — comma-separated, tries in order on 503/429 |
+
+System dependencies:
+
+- **ffmpeg** — required for the video upload flow (extracts audio before Voxtral transcription). Installed in the Docker image via `apk add ffmpeg`. For local dev, install via your package manager.
 
 ```bash
 npm run dev    # http://localhost:4321
@@ -71,7 +73,7 @@ If you touched anything in `config/prompts.ts` or `config/chat-prompts.ts`, also
 
 - **Add a platform**: extend `SocialMediaPlatform` in `src/types/index.ts` → prompt in `chat-prompts.ts` → schema in `schemas.ts` → config entries in `constants.ts` → add to `PLATFORMS` in both SSE routes → card meta in `GenerationFeed.tsx` → tests.
 - **Add a hard-block word**: `HARD_BLOCK_WORDS` in `humanizer-lint.ts` + a corpus-style test in `test/unit/humanizer-lint.test.ts`.
-- **Change models**: env vars only (`MISTRAL_MODELS`, `GOOGLE_GEMINI_MODELS`), no code change.
+- **Change models**: env vars only (`MISTRAL_MODELS`), no code change. Voxtral model is hardcoded in `TRANSCRIPTION_CONSTANTS`.
 - **Adjust upload limits**: `validation.ts` + `InputPanel.tsx` constant `MAX_VIDEO_BYTES` + the dropzone hint copy.
 
 ## Frontend state

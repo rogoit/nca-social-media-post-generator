@@ -1,6 +1,6 @@
 # Documentation
 
-Social Media Content Generator — single-user tool that turns a YouTube transcript (caption text) or an uploaded video into platform-ready posts for **YouTube, LinkedIn, Instagram, and TikTok** using Google Gemini (video → transcript) and Mistral (chat-based text generation with content-quality gates).
+Social Media Content Generator — single-user tool that turns a YouTube transcript (caption text) or an uploaded video into platform-ready posts for **YouTube, LinkedIn, Instagram, and TikTok** using Mistral (Voxtral for video transcription, chat-based text generation with content-quality gates) and ffmpeg for local audio extraction.
 
 ## Guides
 

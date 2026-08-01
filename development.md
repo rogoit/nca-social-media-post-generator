@@ -131,7 +131,7 @@
 ### AI Prompt Testing
 
 - Use **real tests** for prompt validation
-- Test with actual AI providers (Google Gemini, Anthropic Claude)
+- Test with actual AI provider (Mistral)
 - Verify AI output matches expected format and content
 - Include edge cases and brand corrections
 

@@ -5,14 +5,7 @@ import react from "@astrojs/react";
 import node from "@astrojs/node";
 
 const env = loadEnv(process.env.NODE_ENV || "development", process.cwd(), "");
-const RUNTIME_ENV_KEYS = [
-  "EDITOR_ADMIN",
-  "EDITOR_PASSWORD",
-  "GOOGLE_GEMINI_API_KEY",
-  "GOOGLE_GEMINI_MODELS",
-  "MISTRAL_API_KEY",
-  "MISTRAL_MODELS",
-];
+const RUNTIME_ENV_KEYS = ["EDITOR_ADMIN", "EDITOR_PASSWORD", "MISTRAL_API_KEY", "MISTRAL_MODELS"];
 
 // Copy defined values into process.env so `import.meta.env` in SSR code sees
 // them. NOTE: assigning undefined to process.env produces the literal string
@@ -27,12 +20,7 @@ for (const key of RUNTIME_ENV_KEYS) {
 // Validate at startup so misconfigurations are visible immediately.
 // Skipped during `astro build`: env vars are runtime-only (Docker, CI).
 const isBuild = process.argv.some((arg) => arg === "build");
-const REQUIRED_ENV_KEYS = [
-  "EDITOR_ADMIN",
-  "EDITOR_PASSWORD",
-  "GOOGLE_GEMINI_API_KEY",
-  "MISTRAL_API_KEY",
-];
+const REQUIRED_ENV_KEYS = ["EDITOR_ADMIN", "EDITOR_PASSWORD", "MISTRAL_API_KEY"];
 const missing = REQUIRED_ENV_KEYS.filter((key) => !process.env[key]);
 if (!isBuild && missing.length > 0) {
   console.error(

@@ -11,9 +11,7 @@ export default defineConfig(({ mode }) => {
       environment: "jsdom",
       // Load API keys from .env file
       env: {
-        GOOGLE_GEMINI_API_KEY: env.GOOGLE_GEMINI_API_KEY,
         MISTRAL_API_KEY: env.MISTRAL_API_KEY || "mock-mistral-key",
-        GOOGLE_GEMINI_MODELS: env.GOOGLE_GEMINI_MODELS || "gemini-2.5-pro,gemini-2.5-flash",
         MISTRAL_MODELS: env.MISTRAL_MODELS || "mistral-large-latest",
       },
       // Use projects for different test configurations

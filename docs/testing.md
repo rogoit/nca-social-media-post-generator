@@ -6,7 +6,7 @@
 test/
 ├── unit/         Pure functions, fully mocked, fast (<100ms each)
 ├── functional/   Route/workflow tests with mocked AI HTTP calls
-├── real/         Live API tests against Gemini/Mistral (manual runs only)
+├── real/         Live API tests against Mistral (manual runs only)
 └── utils/        Shared mocks and fixtures
 ```
 

@@ -4,14 +4,9 @@ Tests that make actual API calls to validate prompts and AI output quality.
 
 ## Setup
 
-### 1. Get API keys
+### 1. Get API key
 
-**Google Gemini** (video transcription):
-
-- Visit: https://aistudio.google.com/app/apikey
-- Create an API key
-
-**Mistral** (text generation):
+**Mistral** (text generation + video transcription via Voxtral):
 
 - Visit: https://console.mistral.ai/
 - Create an API key under "API keys"
@@ -19,16 +14,16 @@ Tests that make actual API calls to validate prompts and AI output quality.
 ### 2. Set environment variables
 
 ```bash
-export GOOGLE_GEMINI_API_KEY="your-key-here"
 export MISTRAL_API_KEY="your-key-here"
 ```
 
-Or add them to `.env` / `.env.local`:
+Or add to `.env` / `.env.local`:
 
 ```
-GOOGLE_GEMINI_API_KEY=your-key-here
 MISTRAL_API_KEY=your-key-here
 ```
+
+For the video transcription tests, `ffmpeg` must be installed and on PATH.
 
 ## Running Tests
 
@@ -40,7 +35,7 @@ npm run test:real
 npm run test:real -- real/prompt-validation.test.ts
 
 # Provide keys ad hoc
-GOOGLE_GEMINI_API_KEY=xxx MISTRAL_API_KEY=yyy npm run test:real
+GOOGLE_GEMINI_API_KEY=xxx MISTRAL_API_KEY=yyy npm run test:real # legacy; only MISTRAL_API_KEY needed now
 ```
 
 ## Test files
@@ -70,6 +65,6 @@ GOOGLE_GEMINI_API_KEY=xxx MISTRAL_API_KEY=yyy npm run test:real
 
 **API errors:**
 
-- Verify key validity (Gemini rejects invalid keys with `API_KEY_INVALID`)
+- Verify key validity (Mistral rejects invalid keys with `Unauthorized`)
 - Verify the account has credit/quota
 - Mind provider rate limits, especially on free tiers

@@ -8,7 +8,7 @@ How a transcript becomes four platform posts, and the quality gates in between.
 raw transcript/video
    │
    ▼  turn 0 (video only)
-Gemini extractTranscript()                    → raw spoken text
+ffmpeg → 16kHz mono WAV → Mistral Voxtral transcription  → raw spoken text
    │
    ▼  turn 1 (Mistral chat session)
 createInitialMessage(transcript)              → {correctedTranscript, keywords[3]}
@@ -91,8 +91,13 @@ Configured via `MISTRAL_MODELS=primary,secondary` (comma-separated). If a platfo
 - A fatal failure (turn 1, provider outage) emits one `error` event; the UI shows the banner with "Neu starten"
 - Validation errors (bad transcript, bad duration, oversized video) return plain **400 JSON** _before_ the SSE stream starts — stream responses are only for actually running pipelines
 
-## Why Mistral for text, Gemini for video?
+## Why Mistral for everything
 
-- Gemini handles raw media natively (inline video bytes) and is good at transcription.
-- Mistral provides strict `json_schema` output over multi-turn chat, which the whole platform loop depends on; its models handle German marketing-adjacent copy well.
-- The two boundaries are independent: if Gemini fails, no Mistral call happens; if Mistral rate-limits, the pipeline falls back across `MISTRAL_MODELS` without re-touching Gemini.
+- One provider, one API key (`MISTRAL_API_KEY`). Voxtral Mini handles
+  transcription (audio-only input — ffmpeg extracts the audio track locally
+  first), and the chat completions endpoint handles all text generation.
+- Both boundaries are independent: if Voxtral fails, no chat session starts;
+  if a chat call rate-limits, the pipeline falls back across `MISTRAL_MODELS`
+  without re-touching Voxtral.
+- ffmpeg is a system binary (Alpine package in the Docker image), not a
+  cloud dependency — the audio extraction step runs entirely locally.

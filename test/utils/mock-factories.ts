@@ -59,11 +59,3 @@ export function createMockTranscript(length: number): string {
 
   return result.join(" ").substring(0, length);
 }
-
-export function createMockGeminiResponse(content?: string) {
-  return {
-    response: {
-      text: () => content || "Sample response content",
-    },
-  };
-}

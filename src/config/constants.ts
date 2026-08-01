@@ -19,15 +19,9 @@ export const CHARACTER_LIMITS = {
   tiktok: { min: 150, max: 300 },
 } as const;
 
-// AI Models - configured via environment variables with fallback defaults
-const getGoogleModels = (): readonly string[] => {
-  const models = import.meta.env.GOOGLE_GEMINI_MODELS;
-  if (models) {
-    return models.split(",").map((m: string) => m.trim());
-  }
-  return ["gemini-2.5-pro", "gemini-2.5-flash"];
-};
-
+// AI Models — configured via environment variables with fallback defaults.
+// Text generation: Mistral chat. Video transcription: Mistral Voxtral
+// (hardcoded model in TRANSCRIPTION_CONSTANTS below; separate endpoint).
 const getMistralModels = (): readonly string[] => {
   const models = import.meta.env.MISTRAL_MODELS;
   if (models) {
@@ -37,7 +31,6 @@ const getMistralModels = (): readonly string[] => {
 };
 
 export const AI_MODELS = {
-  google: getGoogleModels(),
   mistral: getMistralModels(),
 } as const;
 
@@ -108,9 +101,12 @@ export const ERROR_MESSAGES = {
 export const VIDEO_CONSTANTS = {
   MAX_SIZE_BYTES: 100 * 1024 * 1024,
   ALLOWED_TYPES: ["video/mp4", "video/quicktime", "video/webm"] as const,
-  TRANSCRIPT_PROMPT: `Extrahiere das gesprochene Wort aus diesem Video als vollständiges Transkript.
-Gib NUR den gesprochenen Text zurück, ohne Zeitstempel, ohne Formatierung, ohne Erklärungen.
-Nur der reine gesprochene Text als durchgehender Fließtext.`,
+} as const;
+
+// Mistral audio transcription (Voxtral) — replaces the old Gemini video path.
+export const TRANSCRIPTION_CONSTANTS = {
+  MODEL: "voxtral-mini-latest",
+  ENDPOINT: "https://api.mistral.ai/v1/audio/transcriptions",
 } as const;
 
 export const UI_MESSAGES = {

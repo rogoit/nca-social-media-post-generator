@@ -18,7 +18,7 @@ Build and run locally:
 docker build -f Dockerfile.conversis -t nca-smgen .
 docker run --rm -p 4321:4321 \
   -e EDITOR_ADMIN=... -e EDITOR_PASSWORD=... \
-  -e GOOGLE_GEMINI_API_KEY=... -e MISTRAL_API_KEY=... \
+  -e MISTRAL_API_KEY=... \
   nca-smgen
 ```
 
@@ -45,8 +45,9 @@ At runtime, provide all four required vars (see `docs/development.md`). On boot 
 
 ## Operational notes
 
-- **No rate limiting, no WAF, single-cookie auth**: deploy behind a private network/VPN or an authenticating reverse proxy. Exposing it bare on the internet means anyone who guesses the login sees the UI and spends your Mistral/Gemini quota.
+- **No rate limiting, no WAF, single-cookie auth**: deploy behind a private network/VPN or an authenticating reverse proxy. Exposing it bare on the internet means anyone who guesses the login sees the UI and spends your Mistral quota.
 - **No health endpoint yet**: for platform healthchecks use `GET /login` (200 = process alive). A dedicated `/api/health` would be the minimal addition if your platform requires one.
-- **Memory**: video uploads cap at 100 MB; the Buffer lives in the request scope and is released after the Gemini call. Peak memory ≈ 2 × video size per active request. Single-user usage makes this a non-issue; don't horizontally scale without revisiting.
+- **Memory**: video uploads cap at 100 MB; the Buffer lives in the request scope and is released after the ffmpeg extraction. The temp WAV is cleaned up after Voxtral returns. Peak memory ≈ 2 × video size per active request. Single-user usage makes this a non-issue; don't horizontally scale without revisiting.
+- **ffmpeg**: the Docker image installs ffmpeg via `apk add ffmpeg` in the runtime stage. If running outside Docker, ensure ffmpeg is on PATH.
 - **Logs**: plain `console.*` to stdout/stderr, captured by whatever runs the container.
 - **TLS**: terminate at the proxy; the app listens plain HTTP on 4321.

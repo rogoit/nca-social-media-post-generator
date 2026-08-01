@@ -1,16 +1,10 @@
 import type { AIError } from "../types/index.js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { AI_MODELS, VIDEO_CONSTANTS } from "../config/constants.js";
-import { sanitizeApiKey } from "./validation.js";
+import { AI_MODELS } from "../config/constants.js";
 
 export interface AIProvider {
   readonly name: string;
   readonly models: readonly string[];
   generateContent?(prompt: string): Promise<{ text: string; model: string }>;
-  extractTranscript?(
-    videoBuffer: Buffer,
-    mimeType: string
-  ): Promise<{ text: string; model: string }>;
   startChatSession?(): void;
   sendChatMessage?(
     message: string,
@@ -64,43 +58,6 @@ function collectError(error: unknown, providerName: string): AIError {
     message: error instanceof Error ? error.message : "Unbekannter Fehler",
     status: (error as { status?: number }).status,
   };
-}
-
-export class GoogleGeminiProvider implements AIProvider {
-  readonly name = "Google Gemini";
-  readonly models = AI_MODELS.google;
-  private genAI: GoogleGenerativeAI;
-
-  constructor(apiKey: string) {
-    this.genAI = new GoogleGenerativeAI(sanitizeApiKey(apiKey));
-  }
-
-  async extractTranscript(
-    videoBuffer: Buffer,
-    mimeType: string
-  ): Promise<{ text: string; model: string }> {
-    const errors: AIError[] = [];
-
-    for (const model of this.models) {
-      try {
-        const genModel = this.genAI.getGenerativeModel({ model });
-        const result = await genModel.generateContent([
-          VIDEO_CONSTANTS.TRANSCRIPT_PROMPT,
-          { inlineData: { data: videoBuffer.toString("base64"), mimeType } },
-        ]);
-        const text = (await result.response).text();
-        return { text, model };
-      } catch (error: unknown) {
-        const aiError = collectError(error, this.name);
-        errors.push(aiError);
-        console.error(`Video transcript extraction failed with ${model}:`, aiError.message);
-      }
-    }
-
-    throw new Error(
-      `${this.name} video transcript extraction failed: ${errors.map((e) => e.message).join(", ")}`
-    );
-  }
 }
 
 export class MistralProvider implements AIProvider {
