@@ -11,7 +11,8 @@ import {
   TIKTOK_RESPONSE_FORMAT,
 } from "../config/schemas.js";
 import { lintPost, formatViolationsForRetry } from "./humanizer-lint.js";
-import { MistralProvider } from "./ai-providers.js";
+import { MistralProvider, OllamaProvider, isRetryableError } from "./ai-providers.js";
+import type { AIProvider } from "./ai-providers.js";
 
 export type GenerationPlatform = Exclude<SocialMediaPlatform, "keywords">;
 
@@ -44,7 +45,7 @@ const PLATFORM_RESPONSE_FORMATS: Record<
  * generate one platform each. No module-level state — safe under concurrency.
  */
 export class GenerationSession {
-  readonly provider: MistralProvider;
+  provider: AIProvider;
   correctedTranscript = "";
   keywords: string[] = [];
   currentModel = "";
@@ -64,7 +65,7 @@ export class GenerationSession {
     keywords: string[];
     model: string;
   }> {
-    this.provider.startChatSession();
+    this.provider.startChatSession!();
     return this.reinitialize(transcript);
   }
 
@@ -78,7 +79,7 @@ export class GenerationSession {
     model: string;
   }> {
     const initialMessage = ChatPrompts.createInitialMessage(transcript);
-    const { text, model } = await this.provider.sendChatMessage(
+    const { text, model } = await this.provider.sendChatMessage!(
       initialMessage,
       TRANSCRIPT_RESPONSE_FORMAT
     );
@@ -122,17 +123,15 @@ export class GenerationSession {
     let model: string;
 
     try {
-      const result = await this.provider.sendChatMessage(platformMessage, responseFormat);
+      const result = await this.provider.sendChatMessage!(platformMessage, responseFormat);
       text = result.text;
       model = result.model;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      const isRetryable = /\[503\s|\[429\s|Resource has been exhausted/i.test(message);
-      if (!isRetryable || !(await this.restartOnFallbackModel(originalTranscript))) {
+      if (!isRetryableError(error) || !(await this.restartOnFallbackModel(originalTranscript))) {
         throw error;
       }
       this.emit?.({ type: "model_fallback", model: this.currentModel });
-      const result = await this.provider.sendChatMessage(platformMessage, responseFormat);
+      const result = await this.provider.sendChatMessage!(platformMessage, responseFormat);
       text = result.text;
       model = result.model;
     }
@@ -177,7 +176,7 @@ export class GenerationSession {
     const retryMessage = `Überarbeite deine letzte Antwort. Ersetze unbedingt diese Wörter und Muster: ${forbiddenList}. Behalte alle Fakten, Zahlen, Aussagen und das JSON-Format bei. Gib NUR das überarbeitete JSON-Objekt zurück.`;
 
     try {
-      const retryResult = await this.provider.sendChatMessage(retryMessage, responseFormat);
+      const retryResult = await this.provider.sendChatMessage!(retryMessage, responseFormat);
       const retryReport = lintPost(retryResult.text);
 
       if (!retryReport.blocked) {
@@ -200,19 +199,33 @@ export class GenerationSession {
   }
 
   /**
-   * Restarts the chat session on the next configured Mistral model and re-runs
-   * turn 1 so the session keeps context. Returns false when no fallback remains.
+   * Restarts the chat session on the next configured Mistral model. If no
+   * further Mistral model is available, falls back to Ollama Cloud (when
+   * OLLAMA_API_KEY is set). Re-runs turn 1 so the session keeps context.
+   * Returns false when no fallback remains.
    */
   private async restartOnFallbackModel(originalTranscript: string): Promise<boolean> {
     const currentIndex = AI_MODELS.mistral.indexOf(this.currentModel);
     const nextModel = AI_MODELS.mistral[currentIndex + 1];
-    if (!nextModel) {
-      return false;
+
+    if (nextModel) {
+      console.warn(`Restarting chat session on fallback model: ${nextModel}`);
+      (this.provider as MistralProvider).startChatSessionWithModel(nextModel);
+      await this.reinitialize(originalTranscript);
+      return true;
     }
 
-    console.warn(`Restarting chat session on fallback model: ${nextModel}`);
-    this.provider.startChatSessionWithModel(nextModel);
-    await this.reinitialize(originalTranscript);
-    return true;
+    const ollamaKey = import.meta.env.OLLAMA_API_KEY;
+    if (ollamaKey) {
+      const ollamaModel = AI_MODELS.ollama;
+      console.warn(`Mistral fallback exhausted, switching to Ollama: ${ollamaModel}`);
+      this.provider = new OllamaProvider(ollamaKey, ollamaModel);
+      this.provider.startChatSession!();
+      await this.reinitialize(originalTranscript);
+      this.currentModel = `Ollama/${ollamaModel}`;
+      return true;
+    }
+
+    return false;
   }
 }
