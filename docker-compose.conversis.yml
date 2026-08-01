@@ -26,6 +26,8 @@ services:
       - EDITOR_PASSWORD=${EDITOR_PASSWORD:?EDITOR_PASSWORD is required}
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:?MISTRAL_API_KEY is required}
       - MISTRAL_MODELS=${MISTRAL_MODELS:-mistral-large-latest}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY:-}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-gpt-oss:20b}
 
 networks:
   proxy:
