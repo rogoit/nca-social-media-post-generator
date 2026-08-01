@@ -27,14 +27,24 @@ describe("generation-store", () => {
     expect(s.inputSource).toBe("caption");
   });
 
-  it("beginGenerating marks all platforms pending", () => {
+  it("beginGenerating marks all platforms queued, not pending", () => {
     beginGenerating();
     const s = generationStore.get();
     expect(s.stage).toBe("generating");
-    expect(s.platforms.youtube.status).toBe("pending");
-    expect(s.platforms.linkedin.status).toBe("pending");
-    expect(s.platforms.instagram.status).toBe("pending");
-    expect(s.platforms.tiktok.status).toBe("pending");
+    expect(s.platforms.youtube.status).toBe("queued");
+    expect(s.platforms.linkedin.status).toBe("queued");
+    expect(s.platforms.instagram.status).toBe("queued");
+    expect(s.platforms.tiktok.status).toBe("queued");
+  });
+
+  it("platform_started flips only the active platform from queued to pending", () => {
+    beginGenerating();
+    expect(generationStore.get().platforms.youtube.status).toBe("queued");
+    expect(generationStore.get().platforms.linkedin.status).toBe("queued");
+
+    handleSseEvent("platform_started", { platform: "youtube" });
+    expect(generationStore.get().platforms.youtube.status).toBe("pending");
+    expect(generationStore.get().platforms.linkedin.status).toBe("queued");
   });
 
   it("handles the full SSE event sequence", () => {

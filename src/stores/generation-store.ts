@@ -1,7 +1,7 @@
 import { map } from "nanostores";
 
 export type PlatformKey = "youtube" | "linkedin" | "instagram" | "tiktok";
-export type PlatformStatus = "idle" | "pending" | "humanizer" | "ready" | "error";
+export type PlatformStatus = "idle" | "queued" | "pending" | "humanizer" | "ready" | "error";
 export type Stage = "idle" | "keywords" | "generating" | "done" | "error";
 
 export interface PlatformState {
@@ -72,10 +72,10 @@ export function beginGenerating() {
     stage: "generating",
     errorMessage: null,
     platforms: {
-      youtube: { ...emptyPlatform(), status: "pending" },
-      linkedin: { ...emptyPlatform(), status: "pending" },
-      instagram: { ...emptyPlatform(), status: "pending" },
-      tiktok: { ...emptyPlatform(), status: "pending" },
+      youtube: { ...emptyPlatform(), status: "queued" },
+      linkedin: { ...emptyPlatform(), status: "queued" },
+      instagram: { ...emptyPlatform(), status: "queued" },
+      tiktok: { ...emptyPlatform(), status: "queued" },
     },
   });
 }

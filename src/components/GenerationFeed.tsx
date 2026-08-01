@@ -119,19 +119,23 @@ function StatusBar({ status, barColor }: { status: PlatformState["status"]; barC
   if (status === "idle") return null;
 
   const label =
-    status === "pending"
-      ? "Wird generiert..."
-      : status === "humanizer"
-        ? "Qualitätsprüfung..."
-        : status === "ready"
-          ? "Fertig"
-          : "Fehlgeschlagen";
+    status === "queued"
+      ? "Wartet…"
+      : status === "pending"
+        ? "Wird generiert..."
+        : status === "humanizer"
+          ? "Qualitätsprüfung..."
+          : status === "ready"
+            ? "Fertig"
+            : "Fehlgeschlagen";
+
+  const isWaiting = status === "queued";
 
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
         <span
-          className={`text-xs ${status === "error" ? "text-red-600" : "text-gray-500"}`}
+          className={`text-xs ${status === "error" ? "text-red-600" : isWaiting ? "text-gray-400" : "text-gray-500"}`}
           role="status"
         >
           {label}
@@ -142,6 +146,8 @@ function StatusBar({ status, barColor }: { status: PlatformState["status"]; barC
           <div className={`h-full w-full ${barColor} transition-all duration-500`} />
         ) : status === "error" ? (
           <div className="h-full w-full bg-red-500" />
+        ) : isWaiting ? (
+          <div className="h-full w-0" />
         ) : (
           <div className={`h-full w-1/3 ${barColor} animate-progress-indeterminate rounded-full`} />
         )}

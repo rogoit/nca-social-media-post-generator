@@ -183,7 +183,7 @@ export class OllamaProvider implements AIProvider {
   readonly name = "Ollama";
   readonly models: readonly string[];
   private apiKey: string;
-  private baseUrl = "https://ollama.com/api";
+  private baseUrl = import.meta.env.OLLAMA_BASE_URL || "https://api.ollama.com/v1";
   private chatSession: { messages: Array<{ role: string; content: string }> } | null = null;
   private _currentModel: string = "";
 
@@ -216,7 +216,7 @@ export class OllamaProvider implements AIProvider {
       body.response_format = responseFormat;
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

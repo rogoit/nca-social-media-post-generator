@@ -12,6 +12,7 @@ const RUNTIME_ENV_KEYS = [
   "MISTRAL_MODELS",
   "OLLAMA_API_KEY",
   "OLLAMA_MODEL",
+  "OLLAMA_BASE_URL",
 ];
 
 // Copy defined values into process.env so `import.meta.env` in SSR code sees

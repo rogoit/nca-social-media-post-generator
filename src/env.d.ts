@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly MISTRAL_MODELS?: string;
   readonly OLLAMA_API_KEY?: string;
   readonly OLLAMA_MODEL?: string;
+  readonly OLLAMA_BASE_URL?: string;
 }
 
 interface ImportMeta {
