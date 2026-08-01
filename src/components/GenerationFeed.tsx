@@ -22,13 +22,18 @@ export default function GenerationFeed() {
   if (state.stage === "idle" || state.stage === "keywords") return null;
 
   return (
-    <div className="mt-8 space-y-6">
+    <div className="mt-4 sm:mt-8 space-y-4 sm:space-y-6">
       {state.correctedTranscript && (
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">Korrigiertes Transkript</h2>
-          <div className="text-sm text-gray-700 whitespace-pre-line max-h-48 overflow-y-auto">
-            {state.correctedTranscript}
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold text-gray-900">Korrigiertes Transkript</h2>
+            <CopyButton text={state.correctedTranscript} />
           </div>
+          <ExpandableText
+            text={state.correctedTranscript}
+            multiline
+            desktopScrollClassName="sm:max-h-48 sm:overflow-y-auto"
+          />
           {state.keywords.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
               {state.keywords.map((kw) => (
@@ -191,6 +196,63 @@ function ContentBlock({
   text: string;
   multiline?: boolean;
 }) {
+  return (
+    <div className="border border-gray-200 rounded-md">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+        <span className="text-xs font-medium text-gray-500">{label}</span>
+        <CopyButton text={text} />
+      </div>
+      <ExpandableText
+        text={text}
+        multiline={multiline}
+        desktopScrollClassName={multiline ? "sm:max-h-56 sm:overflow-y-auto" : undefined}
+        blockClassName="px-3 py-2"
+      />
+    </div>
+  );
+}
+
+function ExpandableText({
+  text,
+  multiline = false,
+  desktopScrollClassName,
+  blockClassName = "",
+}: {
+  text: string;
+  multiline?: boolean;
+  desktopScrollClassName?: string;
+  blockClassName?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const isLong = words.length > 10;
+
+  const baseBlock = `text-sm text-gray-700 ${blockClassName}`.trim();
+  const multilineCls = multiline ? "whitespace-pre-line" : "";
+  const mobileCollapsed = !expanded && isLong ? "line-clamp-1" : "";
+
+  return (
+    <div>
+      <div
+        className={`${baseBlock} ${multilineCls} ${mobileCollapsed} ${desktopScrollClassName ?? ""}`.trim()}
+      >
+        {text}
+      </div>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="sm:hidden mt-1 text-xs text-indigo-600 hover:text-indigo-800"
+        >
+          {expanded ? "Weniger" : "Mehr"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -204,22 +266,12 @@ function ContentBlock({
   };
 
   return (
-    <div className="border border-gray-200 rounded-md">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 border-b border-gray-200">
-        <span className="text-xs font-medium text-gray-500">{label}</span>
-        <button
-          type="button"
-          onClick={copy}
-          className="py-1 px-2 text-xs border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-100"
-        >
-          {copied ? "Kopiert!" : "Kopieren"}
-        </button>
-      </div>
-      <div
-        className={`px-3 py-2 text-gray-700 ${multiline ? "whitespace-pre-line max-h-56 overflow-y-auto" : ""}`}
-      >
-        {text}
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={copy}
+      className="py-1 px-2 text-xs border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-100"
+    >
+      {copied ? "Kopiert!" : "Kopieren"}
+    </button>
   );
 }
