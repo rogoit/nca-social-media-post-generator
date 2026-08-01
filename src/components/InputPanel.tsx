@@ -102,11 +102,11 @@ export default function InputPanel() {
           </label>
           <textarea
             id="caption-input"
-            rows={10}
+            rows={4}
             value={caption}
             onChange={(e) => onCaptionChange(e.target.value)}
             placeholder="Füge dein YouTube-Transkript hier ein..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full h-28 sm:h-64 resize-y px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
           />
           <button
             type="button"
@@ -147,7 +147,7 @@ export default function InputPanel() {
                 setDragOver(false);
                 pickFile(e.dataTransfer.files[0] ?? null);
               }}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              className={`border-2 border-dashed rounded-lg p-5 sm:p-8 text-center cursor-pointer transition-colors ${
                 dragOver
                   ? "border-indigo-500 bg-indigo-50"
                   : "border-gray-300 hover:border-indigo-500 hover:bg-indigo-50"
