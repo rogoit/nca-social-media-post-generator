@@ -5,6 +5,7 @@ stages:
   - test
   - build
   - deploy
+  - cypress
 
 test:
   stage: test
@@ -58,3 +59,15 @@ deploy:
   script:
     - docker compose -f docker-compose.conversis.yml -p $SHORTCODE1 rm -sfv || true
     - docker compose -f docker-compose.conversis.yml -p $SHORTCODE1 up -d --remove-orphans
+
+cypress-trigger:
+  stage: cypress
+  only:
+    - main
+  needs: ["deploy"]
+  trigger:
+    project: never-code-alone/nca-internal-projects/nca-social-media-post-generator/nca-social-media-post-generator-cypress-custom
+    branch: main
+  variables:
+    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_PROJECT_PATH: $CI_PROJECT_PATH
