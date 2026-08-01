@@ -5,7 +5,14 @@ import react from "@astrojs/react";
 import node from "@astrojs/node";
 
 const env = loadEnv(process.env.NODE_ENV || "development", process.cwd(), "");
-const RUNTIME_ENV_KEYS = ["EDITOR_ADMIN", "EDITOR_PASSWORD", "MISTRAL_API_KEY", "MISTRAL_MODELS"];
+const RUNTIME_ENV_KEYS = [
+  "EDITOR_ADMIN",
+  "EDITOR_PASSWORD",
+  "MISTRAL_API_KEY",
+  "MISTRAL_MODELS",
+  "OLLAMA_API_KEY",
+  "OLLAMA_MODEL",
+];
 
 // Copy defined values into process.env so `import.meta.env` in SSR code sees
 // them. We must set every key (even when absent from .env) so Vite registers
