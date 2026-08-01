@@ -197,13 +197,15 @@ describe("GenerationSession", () => {
       await session.initialize(TRANSCRIPT);
       expect(session.currentModel).toBe("mistral-large-latest");
 
-      // Retries inside the provider (3 attempts), then restartOnFallbackModel
-      // finds no second model configured -> original error propagates.
+      // Persistently return 429 so every retry and fallback attempt fails.
       const errorBody =
         '{"object":"error","message":"Rate limit exceeded","type":"rate_limited","param":null,"code":"1300","raw_status_code":429}';
-      respondErrorOnce(429, errorBody);
-      respondErrorOnce(429, errorBody);
-      respondErrorOnce(429, errorBody);
+      const errorResponse = {
+        ok: false,
+        status: 429,
+        text: async () => errorBody,
+      };
+      mockFetch.mockResolvedValue(errorResponse);
 
       await expect(session.generatePlatform("linkedin", TRANSCRIPT)).rejects.toThrow("[429]");
     });
