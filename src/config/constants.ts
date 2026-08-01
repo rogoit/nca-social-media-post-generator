@@ -30,8 +30,13 @@ const getMistralModels = (): readonly string[] => {
   return ["mistral-large-latest"];
 };
 
+const getOllamaModel = (): string => {
+  return import.meta.env.OLLAMA_MODEL || "gpt-oss:20b";
+};
+
 export const AI_MODELS = {
   mistral: getMistralModels(),
+  ollama: getOllamaModel(),
 } as const;
 
 export const PLATFORM_CONFIGS: Record<SocialMediaPlatform, PlatformConfig> = {
