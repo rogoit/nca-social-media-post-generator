@@ -23,6 +23,25 @@ for (const key of RUNTIME_ENV_KEYS) {
   }
 }
 
+// Fail fast: without these, every request eventually crashes mid-pipeline.
+// Validate at startup so misconfigurations are visible immediately.
+// Skipped during `astro build`: env vars are runtime-only (Docker, CI).
+const isBuild = process.argv.some((arg) => arg === "build");
+const REQUIRED_ENV_KEYS = [
+  "EDITOR_ADMIN",
+  "EDITOR_PASSWORD",
+  "GOOGLE_GEMINI_API_KEY",
+  "MISTRAL_API_KEY",
+];
+const missing = REQUIRED_ENV_KEYS.filter((key) => !process.env[key]);
+if (!isBuild && missing.length > 0) {
+  console.error(
+    `\nMissing required environment variables: ${missing.join(", ")}.\n` +
+      `Set them in .env / .env.local (see README.md) and restart.\n`
+  );
+  process.exit(1);
+}
+
 // https://astro.build/config
 export default defineConfig({
   integrations: [tailwind(), react()],

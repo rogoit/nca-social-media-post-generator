@@ -1,3 +1,5 @@
+> **Superseded (2026-08):** the n8n distribution step, per-platform approval screen, and Twitter platform described here were removed in the pipeline revamp. See `../README.md` and `../architecture.md` for the current design. Kept for historical context.
+
 # Video Upload & Auto-Generation Flow Design
 
 ## Overview

@@ -1,5 +1,7 @@
 # Development Workflow with Claude
 
+> **Docs index:** System architecture, API, testing strategy, setup and deployment live in [`docs/README.md`](docs/README.md). This file covers the **TDD workflow** (red/green/refactor) with AI assistance.
+
 ## 1. TDD Workflow with Claude
 
 ### Before Starting Implementation
