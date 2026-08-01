@@ -70,4 +70,4 @@ cypress_full_test_preview_stage:
     branch: main
     strategy: depend
   variables:
-    CYPRESS_ENV: stage
+    CYPRESS_ENV: live
