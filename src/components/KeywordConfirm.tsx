@@ -33,7 +33,7 @@ export default function KeywordConfirm() {
   };
 
   return (
-    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-4">
+    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Keywords bestätigen ({chips.length}/{MAX_KEYWORDS})
