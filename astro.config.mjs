@@ -8,12 +8,12 @@ const env = loadEnv(process.env.NODE_ENV || "development", process.cwd(), "");
 const RUNTIME_ENV_KEYS = ["EDITOR_ADMIN", "EDITOR_PASSWORD", "MISTRAL_API_KEY", "MISTRAL_MODELS"];
 
 // Copy defined values into process.env so `import.meta.env` in SSR code sees
-// them. NOTE: assigning undefined to process.env produces the literal string
-// "undefined", which poisons boolean env checks downstream — so we filter.
+// them. We must set every key (even when absent from .env) so Vite registers
+// the key in the import.meta.env polyfill at build time — otherwise the built
+// code never reads process.env.X at runtime, even when the container sets it.
+// Empty string avoids the literal "undefined" that would poison boolean checks.
 for (const key of RUNTIME_ENV_KEYS) {
-  if (env[key] !== undefined) {
-    process.env[key] = env[key];
-  }
+  process.env[key] = env[key] ?? "";
 }
 
 // Fail fast: without these, every request eventually crashes mid-pipeline.
