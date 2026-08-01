@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { TRANSCRIPTION_CONSTANTS } from "../config/constants.js";
+import { isRetryableError } from "./ai-providers.js";
 
 /**
  * Transcribes a WAV audio file via the Mistral audio transcription API
@@ -23,13 +24,45 @@ export class TranscriptionError extends Error {
   }
 }
 
+const MAX_RETRIES = 3;
+const DEFAULT_BASE_DELAY_MS = 2000;
+
 export async function transcribeWavFile(
   wavPath: string,
   apiKey: string,
-  options: { language?: string; timeoutMs?: number } = {}
+  options: { language?: string; timeoutMs?: number; retryBaseDelayMs?: number } = {}
 ): Promise<TranscriptionResult> {
   const wavBytes = await readFile(wavPath);
+  const baseDelayMs = options.retryBaseDelayMs ?? DEFAULT_BASE_DELAY_MS;
 
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      return await attemptTranscription(wavBytes, wavPath, apiKey, options);
+    } catch (error: unknown) {
+      if (!isRetryableError(error) && !(error instanceof Error && error.name === "AbortError")) {
+        throw error;
+      }
+      if (attempt >= MAX_RETRIES - 1) {
+        throw error;
+      }
+      const delayMs = baseDelayMs * Math.pow(2, attempt);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn(
+        `Transcription retryable error, retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRIES}): ${errorMsg}`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  throw new Error("Unreachable");
+}
+
+async function attemptTranscription(
+  wavBytes: Buffer,
+  wavPath: string,
+  apiKey: string,
+  options: { language?: string; timeoutMs?: number }
+): Promise<TranscriptionResult> {
   const formData = new FormData();
   formData.append("file", new Blob([wavBytes], { type: "audio/wav" }), basename(wavPath));
   formData.append("model", TRANSCRIPTION_CONSTANTS.MODEL);
@@ -46,7 +79,6 @@ export async function transcribeWavFile(
     response = await fetch(TRANSCRIPTION_CONSTANTS.ENDPOINT, {
       method: "POST",
       headers: {
-        // Voxtral uses x-api-key, not Bearer — verify before assuming parity with /chat
         "x-api-key": apiKey,
       },
       body: formData,
