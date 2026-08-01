@@ -35,6 +35,8 @@ Korrektur-Hinweise:
 - "PAP", "PP" ersetze mit "PHP"
 - "Sulo", "Solu" ersetze mit "Sulu"
 - "Open Code", "open code", "opencode", "cs code" ersetze mit "OpenCode"
+- "Claude 3" ersetze mit "Kimi 3"
+- "Key Me", "kimi", "kimy", "Kymy", "Kimmy", "Key Me 3", "kimi 3", "kimy 3", "Kimmy 3" ersetze mit "Kimi 3"
 - Wenn Transkript auf Englisch ist, bleibe auf Englisch
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;

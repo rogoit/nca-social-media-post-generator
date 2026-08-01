@@ -183,7 +183,7 @@ export class OllamaProvider implements AIProvider {
   readonly name = "Ollama";
   readonly models: readonly string[];
   private apiKey: string;
-  private baseUrl = import.meta.env.OLLAMA_BASE_URL || "https://api.ollama.com/v1";
+  private baseUrl = import.meta.env.OLLAMA_BASE_URL || "https://ollama.com/v1";
   private chatSession: { messages: Array<{ role: string; content: string }> } | null = null;
   private _currentModel: string = "";
 
