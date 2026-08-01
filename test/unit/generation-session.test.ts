@@ -189,7 +189,11 @@ describe("GenerationSession", () => {
       await session.initialize(TRANSCRIPT);
       expect(session.currentModel).toBe("mistral-large-latest");
 
-      // Persistently return 429 so every retry and fallback attempt fails.
+      // Prevent Ollama fallback so the test asserts the no-fallback path.
+      const originalOllamaKey = (import.meta.env as Record<string, unknown>).OLLAMA_API_KEY;
+      (import.meta.env as Record<string, unknown>).OLLAMA_API_KEY = "";
+
+      // Persistently return 429 so every retry attempt fails.
       const errorBody =
         '{"object":"error","message":"Rate limit exceeded","type":"rate_limited","param":null,"code":"1300","raw_status_code":429}';
       const errorResponse = {
@@ -199,8 +203,12 @@ describe("GenerationSession", () => {
       };
       mockFetch.mockResolvedValue(errorResponse);
 
-      await expect(session.generatePlatform("linkedin", TRANSCRIPT)).rejects.toThrow("[429]");
-    });
+      try {
+        await expect(session.generatePlatform("linkedin", TRANSCRIPT)).rejects.toThrow("[429]");
+      } finally {
+        (import.meta.env as Record<string, unknown>).OLLAMA_API_KEY = originalOllamaKey;
+      }
+    }, 15000);
   });
 
   describe("request isolation via fetch payloads", () => {
