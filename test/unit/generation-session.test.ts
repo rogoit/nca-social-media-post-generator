@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GenerationSession } from "../../src/utils/generation-session.js";
 import type { ProgressEvent } from "../../src/utils/generation-session.js";
+import { MistralProvider } from "../../src/utils/ai-providers.js";
 
 const mockFetch = vi.fn() as any;
 vi.stubGlobal("fetch", mockFetch);
@@ -130,7 +131,7 @@ describe("GenerationSession", () => {
     async function initializedSession(emit?: (e: ProgressEvent) => void) {
       respondOnce({ transcript: "Korrigiert.", keywords: ["a"] });
       const session = new GenerationSession("test-key", emit);
-      session.provider.retryBaseDelayMs = 1;
+      (session.provider as MistralProvider).retryBaseDelayMs = 1;
       await session.initialize(TRANSCRIPT);
       return session;
     }
@@ -192,19 +193,19 @@ describe("GenerationSession", () => {
     it("should rethrow last error when no fallback model is configured", async () => {
       respondOnce({ transcript: "Korrigiert.", keywords: ["a"] });
       const session = new GenerationSession("test-key");
-      session.provider.retryBaseDelayMs = 1;
+      (session.provider as MistralProvider).retryBaseDelayMs = 1;
       await session.initialize(TRANSCRIPT);
       expect(session.currentModel).toBe("mistral-large-latest");
 
       // Retries inside the provider (3 attempts), then restartOnFallbackModel
       // finds no second model configured -> original error propagates.
-      respondErrorOnce(503, "[503] Resource has been exhausted");
-      respondErrorOnce(503, "[503] Resource has been exhausted");
-      respondErrorOnce(503, "[503] Resource has been exhausted");
+      const errorBody =
+        '{"object":"error","message":"Rate limit exceeded","type":"rate_limited","param":null,"code":"1300","raw_status_code":429}';
+      respondErrorOnce(429, errorBody);
+      respondErrorOnce(429, errorBody);
+      respondErrorOnce(429, errorBody);
 
-      await expect(session.generatePlatform("linkedin", TRANSCRIPT)).rejects.toThrow(
-        "Resource has been exhausted"
-      );
+      await expect(session.generatePlatform("linkedin", TRANSCRIPT)).rejects.toThrow("[429]");
     });
   });
 
@@ -212,7 +213,7 @@ describe("GenerationSession", () => {
     it("should send full chat history on subsequent messages", async () => {
       respondOnce({ transcript: "Korrigiert.", keywords: ["a"] });
       const session = new GenerationSession("test-key");
-      session.provider.retryBaseDelayMs = 1;
+      (session.provider as MistralProvider).retryBaseDelayMs = 1;
       await session.initialize(TRANSCRIPT);
 
       respondOnce({ linkedinPost: "LinkedIn Content." });

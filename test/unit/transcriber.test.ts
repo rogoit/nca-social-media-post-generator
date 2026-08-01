@@ -59,14 +59,15 @@ describe("transcriber", () => {
   });
 
   it("should throw TranscriptionError with status on non-ok response", async () => {
-    mockFetch.mockResolvedValueOnce({
+    const errorResponse = {
       ok: false,
       status: 429,
       text: async () => "rate limited",
-    });
+    };
+    mockFetch.mockResolvedValue(errorResponse);
 
     try {
-      await transcribeWavFile(fixturePath, "test-key");
+      await transcribeWavFile(fixturePath, "test-key", { retryBaseDelayMs: 1 });
       expect.unreachable("expected transcribeWavFile to throw");
     } catch (error) {
       expect(error).toBeInstanceOf(TranscriptionError);
