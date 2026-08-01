@@ -71,3 +71,5 @@ cypress_full_test_preview_stage:
     strategy: depend
   variables:
     CYPRESS_ENV: live
+    EDITOR_ADMIN: $EDITOR_ADMIN
+    EDITOR_PASSWORD: $EDITOR_PASSWORD
