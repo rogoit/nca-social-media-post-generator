@@ -131,7 +131,7 @@
 ### AI Prompt Testing
 
 - Use **real tests** for prompt validation
-- Test with actual AI provider (Mistral)
+- Test with actual AI provider (Ollama for text, Mistral Voxtral for video transcription)
 - Verify AI output matches expected format and content
 - Include edge cases and brand corrections
 

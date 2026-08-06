@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GenerationSession } from "../../src/utils/generation-session.js";
 import type { ProgressEvent } from "../../src/utils/generation-session.js";
-import { MistralProvider } from "../../src/utils/ai-providers.js";
+import { OllamaProvider } from "../../src/utils/ai-providers.js";
 
 const mockFetch = vi.fn() as any;
 vi.stubGlobal("fetch", mockFetch);
@@ -24,7 +24,12 @@ function respondOnce(content: string | object) {
   }));
 }
 
+const MODEL = "Ollama/gpt-oss:20b";
 const TRANSCRIPT = "Das hier ist ein langes Test Transkript mit genug Inhalt für die Validierung.";
+
+function newSession(emit?: (e: ProgressEvent) => void): GenerationSession {
+  return new GenerationSession(new OllamaProvider("test-key"), emit);
+}
 
 describe("GenerationSession", () => {
   beforeEach(() => {
@@ -38,20 +43,20 @@ describe("GenerationSession", () => {
         keywords: ["a", "b"],
       });
 
-      const session = new GenerationSession("test-key");
+      const session = newSession();
       const result = await session.initialize(TRANSCRIPT);
 
       expect(result.correctedTranscript).toBe("Korrigiertes Transkript.");
       expect(result.keywords).toEqual(["a", "b"]);
       expect(session.correctedTranscript).toBe("Korrigiertes Transkript.");
       expect(session.keywords).toEqual(["a", "b"]);
-      expect(session.currentModel).toBe("mistral-large-latest");
+      expect(session.currentModel).toBe(MODEL);
     });
 
     it("should fall back to original transcript when AI returns none", async () => {
       respondOnce({ keywords: ["a"] });
 
-      const session = new GenerationSession("test-key");
+      const session = newSession();
       await session.initialize(TRANSCRIPT);
 
       expect(session.correctedTranscript).toBe(TRANSCRIPT);
@@ -61,8 +66,8 @@ describe("GenerationSession", () => {
       respondOnce({ transcript: "Session A Transkript.", keywords: ["a"] });
       respondOnce({ transcript: "Session B Transkript.", keywords: ["b"] });
 
-      const a = new GenerationSession("test-key");
-      const b = new GenerationSession("test-key");
+      const a = newSession();
+      const b = newSession();
       await a.initialize("Transcript A Text hier.");
       await b.initialize("Transcript B Text hier.");
 
@@ -74,7 +79,8 @@ describe("GenerationSession", () => {
   describe("generatePlatform", () => {
     async function initializedSession(emit?: (e: ProgressEvent) => void) {
       respondOnce({ transcript: "Korrigiert.", keywords: ["a"] });
-      const session = new GenerationSession("test-key", emit);
+      const session = newSession(emit);
+      (session.provider as OllamaProvider).retryBaseDelayMs = 1;
       await session.initialize(TRANSCRIPT);
       return session;
     }
@@ -86,7 +92,7 @@ describe("GenerationSession", () => {
       const result = await session.generatePlatform("linkedin", TRANSCRIPT);
 
       expect(result.response.linkedinPost).toContain("LinkedIn Post");
-      expect(result.modelUsed).toBe("mistral-large-latest");
+      expect(result.modelUsed).toBe(MODEL);
       expect(result.humanizerWarnings).toBeUndefined();
     });
 
@@ -122,8 +128,8 @@ describe("GenerationSession", () => {
   describe("humanizer retry", () => {
     async function initializedSession(emit?: (e: ProgressEvent) => void) {
       respondOnce({ transcript: "Korrigiert.", keywords: ["a"] });
-      const session = new GenerationSession("test-key", emit);
-      (session.provider as MistralProvider).retryBaseDelayMs = 1;
+      const session = newSession(emit);
+      (session.provider as OllamaProvider).retryBaseDelayMs = 1;
       await session.initialize(TRANSCRIPT);
       return session;
     }
@@ -181,41 +187,33 @@ describe("GenerationSession", () => {
     });
   });
 
-  describe("fallback model", () => {
-    it("should rethrow last error when no fallback model is configured", async () => {
+  describe("transient errors", () => {
+    it("retries via withRetry then rethrows on persistent 429 (no model fallback)", async () => {
       respondOnce({ transcript: "Korrigiert.", keywords: ["a"] });
-      const session = new GenerationSession("test-key");
-      (session.provider as MistralProvider).retryBaseDelayMs = 1;
+      const session = newSession();
+      (session.provider as OllamaProvider).retryBaseDelayMs = 1;
       await session.initialize(TRANSCRIPT);
-      expect(session.currentModel).toBe("mistral-large-latest");
-
-      // Prevent Ollama fallback so the test asserts the no-fallback path.
-      const originalOllamaKey = (import.meta.env as Record<string, unknown>).OLLAMA_API_KEY;
-      (import.meta.env as Record<string, unknown>).OLLAMA_API_KEY = "";
+      expect(session.currentModel).toBe(MODEL);
 
       // Persistently return 429 so every retry attempt fails.
       const errorBody =
         '{"object":"error","message":"Rate limit exceeded","type":"rate_limited","param":null,"code":"1300","raw_status_code":429}';
-      const errorResponse = {
+      mockFetch.mockResolvedValue({
         ok: false,
         status: 429,
         text: async () => errorBody,
-      };
-      mockFetch.mockResolvedValue(errorResponse);
+      });
 
-      try {
-        await expect(session.generatePlatform("linkedin", TRANSCRIPT)).rejects.toThrow("[429]");
-      } finally {
-        (import.meta.env as Record<string, unknown>).OLLAMA_API_KEY = originalOllamaKey;
-      }
+      // No fallback exists — the 429 rethrows after retries are exhausted.
+      await expect(session.generatePlatform("linkedin", TRANSCRIPT)).rejects.toThrow("[429]");
     }, 15000);
   });
 
   describe("request isolation via fetch payloads", () => {
     it("should send full chat history on subsequent messages", async () => {
       respondOnce({ transcript: "Korrigiert.", keywords: ["a"] });
-      const session = new GenerationSession("test-key");
-      (session.provider as MistralProvider).retryBaseDelayMs = 1;
+      const session = newSession();
+      (session.provider as OllamaProvider).retryBaseDelayMs = 1;
       await session.initialize(TRANSCRIPT);
 
       respondOnce({ linkedinPost: "LinkedIn Content." });
@@ -224,6 +222,53 @@ describe("GenerationSession", () => {
       const req = lastRequest();
       expect(req.messages.length).toBeGreaterThanOrEqual(3); // user init + assistant + platform msg
       expect(req.messages[0].role).toBe("user");
+    });
+  });
+
+  describe("restoreFrom (resume path)", () => {
+    it("restores chat history + fields without re-running turn 1", async () => {
+      const session = newSession();
+      const history = [
+        { role: "user", content: "initial turn-1 message" },
+        {
+          role: "assistant",
+          content: JSON.stringify({ transcript: "Korrigiert.", keywords: ["a"] }),
+        },
+      ];
+
+      session.restoreFrom({
+        chatHistory: history,
+        correctedTranscript: "Korrigiert.",
+        keywords: ["a"],
+        model: MODEL,
+      });
+
+      expect(session.correctedTranscript).toBe("Korrigiert.");
+      expect(session.keywords).toEqual(["a"]);
+      expect(session.currentModel).toBe(MODEL);
+
+      // No fetch should have happened — restoreFrom must not call the AI.
+      expect(mockFetch).not.toHaveBeenCalled();
+
+      // The restored history must be sent on the next platform turn.
+      respondOnce({ linkedinPost: "LinkedIn Post #nca" });
+      await session.generatePlatform("linkedin", "raw");
+
+      const req = lastRequest();
+      expect(req.messages[0].role).toBe("user");
+      expect(req.messages[0].content).toBe("initial turn-1 message");
+      expect(req.messages.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("serializeChatHistory returns the current chat messages", async () => {
+      respondOnce({ transcript: "Korrigiert.", keywords: ["a"] });
+      const session = newSession();
+      await session.initialize(TRANSCRIPT);
+
+      const snapshot = session.serializeChatHistory();
+      expect(snapshot.length).toBe(2); // user + assistant from turn 1
+      expect(snapshot[0].role).toBe("user");
+      expect(snapshot[1].role).toBe("assistant");
     });
   });
 });

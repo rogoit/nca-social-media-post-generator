@@ -11,6 +11,7 @@ RUN npm run build
 
 FROM base AS runtime
 RUN apk add --no-cache ffmpeg
+RUN mkdir -p /app/data && chown node:node /app/data
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
@@ -18,6 +19,7 @@ COPY --from=builder /app/package.json ./
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=4321
+ENV DATABASE_PATH=/app/data/nca.db
 
 EXPOSE 4321
 

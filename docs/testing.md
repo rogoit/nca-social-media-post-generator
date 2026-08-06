@@ -6,7 +6,7 @@
 test/
 ├── unit/         Pure functions, fully mocked, fast (<100ms each)
 ├── functional/   Route/workflow tests with mocked AI HTTP calls
-├── real/         Live API tests against Mistral (manual runs only)
+├── real/         Live API tests against Ollama + Mistral (manual runs only)
 └── utils/        Shared mocks and fixtures
 ```
 
@@ -49,7 +49,7 @@ Full version: the repository's own `development.md` (root) describes the red/gre
 ### Mocking notes
 
 - Global `fetch` is stubbed per-file via `vi.stubGlobal("fetch", ...)` and responses queued with `mockImplementationOnce`
-- The chat-based provider accumulates history — tests that trigger fallbacks/retries must also account for the extra turn-1 re-run call
+- The chat-based provider accumulates history — tests that trigger retries must account for the extra fetch calls
 - The provider's retry backoff is injectable: `session.provider.retryBaseDelayMs = 1` in tests (production default 2000ms)
 
 ## Debugging a red test

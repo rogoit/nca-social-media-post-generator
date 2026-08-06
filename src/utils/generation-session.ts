@@ -1,8 +1,7 @@
 import type { GenerateResponse, SocialMediaPlatform } from "../types/index.js";
-import type { MistralResponseFormat } from "../config/schemas.js";
+import type { StructuredResponseFormat } from "../config/schemas.js";
 import { ChatPrompts } from "../config/chat-prompts.js";
 import { ResponseParser } from "./response-parser.js";
-import { AI_MODELS } from "../config/constants.js";
 import {
   TRANSCRIPT_RESPONSE_FORMAT,
   getYoutubeResponseFormat,
@@ -11,7 +10,6 @@ import {
   TIKTOK_RESPONSE_FORMAT,
 } from "../config/schemas.js";
 import { lintPost, formatViolationsForRetry } from "./humanizer-lint.js";
-import { MistralProvider, OllamaProvider, isRetryableError } from "./ai-providers.js";
 import type { AIProvider } from "./ai-providers.js";
 
 export type GenerationPlatform = Exclude<SocialMediaPlatform, "keywords">;
@@ -19,8 +17,7 @@ export type GenerationPlatform = Exclude<SocialMediaPlatform, "keywords">;
 export type ProgressEvent =
   | { type: "platform_started"; platform: GenerationPlatform }
   | { type: "humanizer_retry"; platform: GenerationPlatform }
-  | { type: "platform_completed"; platform: GenerationPlatform }
-  | { type: "model_fallback"; model: string };
+  | { type: "platform_completed"; platform: GenerationPlatform };
 
 export type ProgressCallback = (event: ProgressEvent) => void;
 
@@ -32,7 +29,7 @@ export interface GeneratePlatformResult {
 
 const PLATFORM_RESPONSE_FORMATS: Record<
   Exclude<GenerationPlatform, "youtube">,
-  MistralResponseFormat
+  StructuredResponseFormat
 > = {
   linkedin: LINKEDIN_RESPONSE_FORMAT,
   instagram: INSTAGRAM_RESPONSE_FORMAT,
@@ -40,9 +37,10 @@ const PLATFORM_RESPONSE_FORMATS: Record<
 };
 
 /**
- * Request-scoped generation session. Owns one Mistral chat session:
+ * Request-scoped generation session. Owns one Ollama chat session:
  * turn 1 corrects the transcript and extracts keywords, subsequent turns
  * generate one platform each. No module-level state — safe under concurrency.
+ * The provider is injected so the caller picks the configured text backend.
  */
 export class GenerationSession {
   provider: AIProvider;
@@ -51,10 +49,10 @@ export class GenerationSession {
   currentModel = "";
 
   constructor(
-    apiKey: string,
+    provider: AIProvider,
     private readonly emit?: ProgressCallback
   ) {
-    this.provider = new MistralProvider(apiKey);
+    this.provider = provider;
   }
 
   /**
@@ -67,6 +65,29 @@ export class GenerationSession {
   }> {
     this.provider.startChatSession!();
     return this.reinitialize(transcript);
+  }
+
+  /**
+   * Restores a session from a persisted run (resume path). Replaces the chat
+   * message history so subsequent platform turns continue the same conversation
+   * — turn 1 (transcript correction + keywords) is NOT re-run, saving an AI
+   * call and keeping the corrected transcript stable across retries.
+   */
+  restoreFrom(data: {
+    chatHistory: Array<{ role: string; content: string }>;
+    correctedTranscript: string;
+    keywords: string[];
+    model: string;
+  }): void {
+    this.provider.restoreChatHistory!(data.chatHistory);
+    this.correctedTranscript = data.correctedTranscript;
+    this.keywords = data.keywords;
+    this.currentModel = data.model;
+  }
+
+  /** Snapshot the chat message history for persistence (after each turn). */
+  serializeChatHistory(): Array<{ role: string; content: string }> {
+    return this.provider.serializeChatHistory!();
   }
 
   /**
@@ -99,8 +120,9 @@ export class GenerationSession {
   }
 
   /**
-   * Generates one platform. On 503/429 after provider retries are exhausted,
-   * restarts the chat session on the next Mistral model and retries once.
+   * Generates one platform. Transient errors (429/503) are retried inside the
+   * provider's withRetry; persistent failures rethrow so the caller can emit a
+   * per-platform error (the pipeline continues with the remaining platforms).
    * Humanizer lint runs on the output; one corrective retry is attempted,
    * then remaining violations are surfaced as warnings.
    */
@@ -119,22 +141,7 @@ export class GenerationSession {
         ? getYoutubeResponseFormat(options.videoDuration)
         : PLATFORM_RESPONSE_FORMATS[platform];
 
-    let text: string;
-    let model: string;
-
-    try {
-      const result = await this.provider.sendChatMessage!(platformMessage, responseFormat);
-      text = result.text;
-      model = result.model;
-    } catch (error: unknown) {
-      if (!isRetryableError(error) || !(await this.restartOnFallbackModel(originalTranscript))) {
-        throw error;
-      }
-      this.emit?.({ type: "model_fallback", model: this.currentModel });
-      const result = await this.provider.sendChatMessage!(platformMessage, responseFormat);
-      text = result.text;
-      model = result.model;
-    }
+    const { text, model } = await this.provider.sendChatMessage!(platformMessage, responseFormat);
 
     const parsedResponse = ResponseParser.parseResponse(platform, text);
     const validationError = ResponseParser.validateResponse(platform, parsedResponse);
@@ -162,7 +169,7 @@ export class GenerationSession {
 
   private async applyHumanizerLint(
     text: string,
-    responseFormat: MistralResponseFormat,
+    responseFormat: StructuredResponseFormat,
     platform: GenerationPlatform
   ): Promise<{ text: string; warnings: string[] }> {
     const report = lintPost(text);
@@ -196,36 +203,5 @@ export class GenerationSession {
       text,
       warnings: Array.from(new Set(report.violations.map((v) => v.word))),
     };
-  }
-
-  /**
-   * Restarts the chat session on the next configured Mistral model. If no
-   * further Mistral model is available, falls back to Ollama Cloud (when
-   * OLLAMA_API_KEY is set). Re-runs turn 1 so the session keeps context.
-   * Returns false when no fallback remains.
-   */
-  private async restartOnFallbackModel(originalTranscript: string): Promise<boolean> {
-    const currentIndex = AI_MODELS.mistral.indexOf(this.currentModel);
-    const nextModel = AI_MODELS.mistral[currentIndex + 1];
-
-    if (nextModel) {
-      console.warn(`Restarting chat session on fallback model: ${nextModel}`);
-      (this.provider as MistralProvider).startChatSessionWithModel(nextModel);
-      await this.reinitialize(originalTranscript);
-      return true;
-    }
-
-    const ollamaKey = import.meta.env.OLLAMA_API_KEY;
-    if (ollamaKey) {
-      const ollamaModel = AI_MODELS.ollama;
-      console.warn(`Mistral fallback exhausted, switching to Ollama: ${ollamaModel}`);
-      this.provider = new OllamaProvider(ollamaKey, ollamaModel);
-      this.provider.startChatSession!();
-      await this.reinitialize(originalTranscript);
-      this.currentModel = `Ollama/${ollamaModel}`;
-      return true;
-    }
-
-    return false;
   }
 }

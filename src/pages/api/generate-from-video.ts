@@ -6,8 +6,16 @@ import { GenerationSession } from "../../utils/generation-session.js";
 import type { GenerationPlatform } from "../../utils/generation-session.js";
 import { SseStream, sseResponse } from "../../utils/sse.js";
 import { jsonResponse } from "../../utils/api-helpers.js";
+import { createTextProvider } from "../../utils/ai-providers.js";
+import {
+  startRun,
+  persistTurn1,
+  persistPlatformResult,
+  finishRun,
+} from "../../utils/persistence.js";
 
 const MISTRAL_API_KEY = import.meta.env.MISTRAL_API_KEY;
+const OLLAMA_API_KEY = import.meta.env.OLLAMA_API_KEY;
 
 const PLATFORMS: GenerationPlatform[] = ["youtube", "linkedin", "instagram", "tiktok"];
 
@@ -16,12 +24,22 @@ const PLATFORMS: GenerationPlatform[] = ["youtube", "linkedin", "instagram", "ti
  * Pipeline: video → ffmpeg audio WAV → Mistral Voxtral transcription →
  * Mistral chat session (correction, keywords, per-platform content).
  * The video Buffer and the temp WAV are request-scoped; the temp dir is
- * removed once transcription returns. Nothing is persisted server-side.
+ * removed once transcription returns. Generation artifacts are persisted to
+ * SQLite (keyed by filename) so a refresh/SSE-drop can resume from the last
+ * save-point without re-running turn 1.
  */
 export const POST: APIRoute = async ({ request }) => {
+  // Text generation uses Ollama; audio transcription uses Mistral Voxtral —
+  // both keys are required for the video flow.
+  if (!OLLAMA_API_KEY) {
+    return jsonResponse(
+      { error: "Verarbeitung nicht verfügbar. Bitte OLLAMA_API_KEY prüfen." },
+      503
+    );
+  }
   if (!MISTRAL_API_KEY) {
     return jsonResponse(
-      { error: "Verarbeitung nicht verfügbar. Bitte MISTRAL_API_KEY prüfen." },
+      { error: "Verarbeitung nicht verfügbar. Bitte MISTRAL_API_KEY (Voxtral) prüfen." },
       503
     );
   }
@@ -61,10 +79,20 @@ export const POST: APIRoute = async ({ request }) => {
     return ".mp4";
   })();
 
+  // Persist the run before the stream opens so a refresh during the very first
+  // seconds can still find it. createRun wipes any prior run (latest-only).
+  const run = await startRun({
+    filename: videoFile.name,
+    inputSource: "video",
+    videoDuration,
+  });
+
   const sse = new SseStream();
+  sse.sendRunStarted(run.id, run.filename);
 
   (async () => {
     let workDir: string | null = null;
+    let readyCount = 0;
     try {
       // Step 1: video bytes → audio WAV (ffmpeg, temp dir, discarded after)
       sse.event("extraction_started", {});
@@ -84,8 +112,18 @@ export const POST: APIRoute = async ({ request }) => {
       workDir = null;
 
       // Step 3: Mistral chat session — correction + keywords + all platforms
-      const session = new GenerationSession(MISTRAL_API_KEY, (event) => sse.emitProgress(event));
+      const session = new GenerationSession(createTextProvider(), (event) =>
+        sse.emitProgress(event)
+      );
       const { correctedTranscript, keywords, model } = await session.initialize(rawTranscript);
+
+      await persistTurn1(run.id, {
+        rawTranscript,
+        correctedTranscript,
+        keywords,
+        chatHistory: session.serializeChatHistory(),
+        model,
+      });
 
       sse.event("transcript_done", { transcript: correctedTranscript, keywords, modelUsed: model });
 
@@ -96,6 +134,13 @@ export const POST: APIRoute = async ({ request }) => {
             videoDuration,
           });
           lastModel = result.modelUsed;
+          readyCount++;
+          await persistPlatformResult(run.id, platform, {
+            status: "ready",
+            content: result.response as Record<string, unknown>,
+            model: result.modelUsed,
+            humanizerWarnings: result.humanizerWarnings,
+          });
           sse.sendPlatformDone(
             platform,
             result.response,
@@ -106,14 +151,19 @@ export const POST: APIRoute = async ({ request }) => {
           const message =
             platformError instanceof Error ? platformError.message : String(platformError);
           console.error(`Platform ${platform} generation failed:`, platformError);
+          await persistPlatformResult(run.id, platform, { status: "error", errorMessage: message });
           sse.event("platform_error", { platform, message });
         }
       }
 
+      await finishRun(run.id, readyCount === PLATFORMS.length ? "done" : "partial");
       sse.sendComplete(lastModel);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("generate-from-video pipeline failed:", error);
+      await finishRun(run.id, "error", message).catch((e) =>
+        console.warn("Failed to persist run error state:", e)
+      );
       sse.sendError("pipeline", message);
     } finally {
       if (workDir) {

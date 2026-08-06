@@ -10,35 +10,34 @@ raw transcript/video
    ▼  turn 0 (video only)
 ffmpeg → 16kHz mono WAV → Mistral Voxtral transcription  → raw spoken text
    │
-   ▼  turn 1 (Mistral chat session)
+   ▼  turn 1 (Ollama chat session)
 createInitialMessage(transcript)              → {correctedTranscript, keywords[3]}
    │
    ▼  turns 2..5 (same chat session)
 createPlatformMessage(platform, videoDuration?) → platform content
    │
-   ├─► Humanizer lint ──► one corrective retry ──► warnings surfaced if still dirty
-   └─► on 503/429: restart chat on next Mistral model, retry once
+   └─► Humanizer lint ──► one corrective retry ──► warnings surfaced if still dirty
 ```
 
 ## The chat session (`GenerationSession`)
 
-One request = one `GenerationSession` = one Mistral chat session. The session exists because platforms build on shared context: brand vocabulary, corrected transcript, and keywords are established once in turn 1; each platform message is a **short follow-up** ("Erstelle jetzt einen LinkedIn-Post basierend auf dem korrigierten Transkript …"), not a self-contained prompt. This is what keeps multi-platform output consistent and cheap.
+One request = one `GenerationSession` = one Ollama chat session. The session exists because platforms build on shared context: brand vocabulary, corrected transcript, and keywords are established once in turn 1; each platform message is a **short follow-up** ("Erstelle jetzt einen LinkedIn-Post basierend auf dem korrigierten Transkript …"), not a self-contained prompt. This is what keeps multi-platform output consistent and cheap.
 
-The class itself is deliberately stateless at module level: construct it per request with your Mistral API key.
+The class itself is deliberately stateless at module level: construct it per request with the configured provider.
 
 ```typescript
-const session = new GenerationSession(MISTRAL_API_KEY, emit?);
+const session = new GenerationSession(createTextProvider(), emit?);
 const { correctedTranscript, keywords } = await session.initialize(transcript);
 for (const platform of ["youtube", "linkedin", "instagram", "tiktok"]) {
   const result = await session.generatePlatform(platform, transcript, { videoDuration });
 }
 ```
 
-`emit` is optional and receives progress events (`platform_started`, `humanizer_retry`, `platform_completed`, `model_fallback`) — the SSE routes forward these to the browser.
+`emit` is optional and receives progress events (`platform_started`, `humanizer_retry`, `platform_completed`) — the SSE routes forward these to the browser.
 
 ## Structured output
 
-Every turn uses Mistral's `response_format: {type: "json_schema"}` with strict schemas from `src/config/schemas.ts`. This guarantees parseable JSON per platform:
+Every turn uses the OpenAI-compatible `response_format: {type: "json_schema"}` with strict schemas from `src/config/schemas.ts`. Ollama honors this via its structured-outputs layer; this guarantees parseable JSON per platform:
 
 - turn 1: `{transcript, keywords}` (`maxItems: 3`)
 - YouTube: `{title, description, timestamps?}` — timestamps key only exists when `videoDuration` was provided, enforced via `additionalProperties: false`
@@ -81,23 +80,19 @@ On a blocked result the pipeline **retries once inside the same chat session** w
 - partially cleaner retry → used, remaining words surfaced as `humanizerWarnings` (shown as an amber note on the card)
 - no improvement / retry failed → original kept, warnings surfaced
 
-### Model fallback
+### Transient errors
 
-Configured via `MISTRAL_MODELS=primary,secondary` (comma-separated). If a platform call dies with 503/429 after the provider's internal retries, the session restarts on the next model and re-runs turn 1 to restore context, then retries the platform once. Emits `model_fallback` so the UI shows which model landed.
+There is **no model fallback** — a single Ollama model (`OLLAMA_MODEL`, default `gpt-oss:20b`) serves all text generation. Transient 429/503 errors are retried inside the provider (`withRetry`, 3× exponential backoff). A persistent failure rethrows so the SSE route emits `platform_error` and continues with the remaining platforms.
 
 ## Error behavior
 
 - A single platform erroring does **not** kill the pipeline: SSE emits `platform_error` and continues; the card gets a per-platform retry button
 - A fatal failure (turn 1, provider outage) emits one `error` event; the UI shows the banner with "Neu starten"
-- Validation errors (bad transcript, bad duration, oversized video) return plain **400 JSON** _before_ the SSE stream starts — stream responses are only for actually running pipelines
+- Validation errors (bad transcript, bad duration) return plain **400 JSON** _before_ the SSE stream starts — stream responses are only for actually running pipelines
 
-## Why Mistral for everything
+## Why Ollama for text + Mistral Voxtral for audio
 
-- One provider, one API key (`MISTRAL_API_KEY`). Voxtral Mini handles
-  transcription (audio-only input — ffmpeg extracts the audio track locally
-  first), and the chat completions endpoint handles all text generation.
-- Both boundaries are independent: if Voxtral fails, no chat session starts;
-  if a chat call rate-limits, the pipeline falls back across `MISTRAL_MODELS`
-  without re-touching Voxtral.
-- ffmpeg is a system binary (Alpine package in the Docker image), not a
-  cloud dependency — the audio extraction step runs entirely locally.
+- **Ollama** (OpenAI-compatible) drives all text generation (transcript correction, keywords, per-platform posts) via `OLLAMA_API_KEY`. Use hosted Ollama Cloud or any compatible endpoint via `OLLAMA_BASE_URL`.
+- **Mistral Voxtral** handles video audio transcription only (`MISTRAL_API_KEY`) — Ollama has no audio/transcription endpoint, so this stays on Mistral.
+- The two boundaries are independent: if Voxtral fails, no chat session starts; if a chat call rate-limits, the provider retries — neither blocks the other's concern.
+- ffmpeg is a system binary (Alpine package in the Docker image), not a cloud dependency — the audio extraction step runs entirely locally.

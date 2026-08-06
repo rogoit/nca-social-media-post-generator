@@ -12,7 +12,8 @@ export default defineConfig(({ mode }) => {
       // Load API keys from .env file
       env: {
         MISTRAL_API_KEY: env.MISTRAL_API_KEY || "mock-mistral-key",
-        MISTRAL_MODELS: env.MISTRAL_MODELS || "mistral-large-latest",
+        OLLAMA_API_KEY: env.OLLAMA_API_KEY || "mock-ollama-key",
+        OLLAMA_MODEL: env.OLLAMA_MODEL || "gpt-oss:20b",
       },
       // Use projects for different test configurations
       projects: [

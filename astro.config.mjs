@@ -9,10 +9,11 @@ const RUNTIME_ENV_KEYS = [
   "EDITOR_ADMIN",
   "EDITOR_PASSWORD",
   "MISTRAL_API_KEY",
-  "MISTRAL_MODELS",
   "OLLAMA_API_KEY",
   "OLLAMA_MODEL",
   "OLLAMA_BASE_URL",
+  "OLLAMA_TIMEOUT_MS",
+  "DATABASE_PATH",
 ];
 
 // Copy defined values into process.env so `import.meta.env` in SSR code sees
@@ -28,7 +29,7 @@ for (const key of RUNTIME_ENV_KEYS) {
 // Validate at startup so misconfigurations are visible immediately.
 // Skipped during `astro build`: env vars are runtime-only (Docker, CI).
 const isBuild = process.argv.some((arg) => arg === "build");
-const REQUIRED_ENV_KEYS = ["EDITOR_ADMIN", "EDITOR_PASSWORD", "MISTRAL_API_KEY"];
+const REQUIRED_ENV_KEYS = ["EDITOR_ADMIN", "EDITOR_PASSWORD", "MISTRAL_API_KEY", "OLLAMA_API_KEY"];
 const missing = REQUIRED_ENV_KEYS.filter((key) => !process.env[key]);
 if (!isBuild && missing.length > 0) {
   console.error(

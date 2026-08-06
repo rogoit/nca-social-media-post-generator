@@ -1,8 +1,9 @@
-// JSON Schemas for Mistral structured output (response_format: json_schema mode).
-// Each schema guarantees the model returns valid JSON matching these fields,
-// eliminating markdown / section-header leaks across all generated content.
+// JSON Schemas for structured output (response_format: json_schema mode,
+// honored by Ollama's OpenAI-compatible endpoint). Each schema guarantees the
+// model returns valid JSON matching these fields, eliminating markdown /
+// section-header leaks across all generated content.
 
-export type MistralResponseFormat = {
+export type StructuredResponseFormat = {
   type: "json_schema";
   json_schema: {
     schema: object;
@@ -11,7 +12,7 @@ export type MistralResponseFormat = {
   };
 };
 
-function wrap(schema: object, name: string): MistralResponseFormat {
+function wrap(schema: object, name: string): StructuredResponseFormat {
   return { type: "json_schema", json_schema: { schema, name, strict: true } };
 }
 
@@ -31,7 +32,7 @@ export const TRANSCRIPT_RESPONSE_FORMAT = wrap(
 // YouTube schema is dynamic: the "timestamps" property is only declared when a
 // videoDuration is provided. With additionalProperties:false + strict:true this
 // guarantees the model cannot return timestamps when they were not requested.
-export function getYoutubeResponseFormat(videoDuration?: string): MistralResponseFormat {
+export function getYoutubeResponseFormat(videoDuration?: string): StructuredResponseFormat {
   const properties: Record<string, object> = {
     title: { type: "string" },
     description: { type: "string" },

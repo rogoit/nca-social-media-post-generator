@@ -4,9 +4,14 @@ Tests that make actual API calls to validate prompts and AI output quality.
 
 ## Setup
 
-### 1. Get API key
+### 1. Get API keys
 
-**Mistral** (text generation + video transcription via Voxtral):
+**Ollama** (text generation — required):
+
+- Use [Ollama Cloud](https://ollama.com) or any OpenAI-compatible endpoint.
+- Set `OLLAMA_API_KEY` and (optionally) `OLLAMA_BASE_URL` + `OLLAMA_MODEL` (default `gpt-oss:20b`).
+
+**Mistral** (video transcription via Voxtral — required only for video tests):
 
 - Visit: https://console.mistral.ai/
 - Create an API key under "API keys"
@@ -14,16 +19,18 @@ Tests that make actual API calls to validate prompts and AI output quality.
 ### 2. Set environment variables
 
 ```bash
-export MISTRAL_API_KEY="your-key-here"
+export OLLAMA_API_KEY="your-ollama-key-here"
+export MISTRAL_API_KEY="your-mistral-key-here"   # only for video transcription tests
 ```
 
 Or add to `.env` / `.env.local`:
 
 ```
-MISTRAL_API_KEY=your-key-here
+OLLAMA_API_KEY=your-ollama-key-here
+MISTRAL_API_KEY=your-mistral-key-here
 ```
 
-For the video transcription tests, `ffmpeg` must be installed and on PATH.
+Tests skip automatically when the relevant key is missing. For the video transcription tests, `ffmpeg` must be installed and on PATH.
 
 ## Running Tests
 
@@ -65,6 +72,6 @@ GOOGLE_GEMINI_API_KEY=xxx MISTRAL_API_KEY=yyy npm run test:real # legacy; only M
 
 **API errors:**
 
-- Verify key validity (Mistral rejects invalid keys with `Unauthorized`)
+- Verify key validity (providers reject invalid keys with `Unauthorized`)
 - Verify the account has credit/quota
 - Mind provider rate limits, especially on free tiers

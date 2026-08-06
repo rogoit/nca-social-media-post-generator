@@ -5,6 +5,9 @@ export interface GenerateRequest {
   type?: SocialMediaPlatform;
   videoDuration?: string;
   keywords?: string[];
+  /** When set, restore the chat session from this persisted run instead of
+   * re-running turn 1. Used by single-platform retry on a resumed run. */
+  runId?: string;
 }
 
 export interface GenerateResponse {
@@ -20,12 +23,6 @@ export interface GenerateResponse {
   modelUsed: string;
   humanizerWarnings?: string[];
   error?: string;
-}
-
-export interface AIError {
-  status?: number;
-  message: string;
-  provider: string;
 }
 
 export interface PlatformConfig {

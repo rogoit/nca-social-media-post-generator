@@ -12,7 +12,8 @@ JSON endpoint. Keyword detection, per-platform regeneration, per-platform retry.
 {
   "transcript": "string, required",
   "type": "youtube | linkedin | instagram | tiktok | keywords   (default: youtube)",
-  "videoDuration": "MM:SS, optional"
+  "videoDuration": "MM:SS, optional",
+  "runId": "string, optional — restore chat history from this persisted run (skip turn 1)"
 }
 ```
 
@@ -36,16 +37,17 @@ SSE endpoint (caption flow). Streams all four platforms from one transcript.
 
 SSE endpoint (video flow). `multipart/form-data`:
 
-| Field           | Type                          | Required |
-| --------------- | ----------------------------- | -------- |
-| `video`         | File (MP4/MOV/WebM, ≤ 100 MB) | ✓        |
-| `videoDuration` | `MM:SS`                       | optional |
+| Field           | Type                             | Required |
+| --------------- | -------------------------------- | -------- |
+| `video`         | File (MP4/MOV/WebM, no size cap) | ✓        |
+| `videoDuration` | `MM:SS`                          | optional |
 
 **Response** `200 text/event-stream` after the transcript is extracted. Same [event contract](#sse-events) as `/api/generate-all`. Fatal video-extraction failure appears as one `error` event. Early-validation failures (`400`) are JSON.
 
 ### SSE events
 
 ```
+event: run_started         data: {"runId":"uuid","filename":"clip.mp4"}
 event: transcript_done
 data: {"transcript":"...","keywords":["A","B","C"],"modelUsed":"mistral-large-latest"}
 
@@ -64,7 +66,21 @@ event: error               data: {"stage":"pipeline","message":"..."}
 event: complete            data: {"modelUsed":"..."}
 ```
 
-Platform `content` shapes mirror the `/api/generate` response fields (YouTube includes `title`, `description`, optionally `timestamps`, and `transcript`). Client-side parsing lives at `handleSseEvent()` in `src/stores/generation-store.ts`.
+`run_started` is always the first event of every SSE stream and carries the `runId` the frontend persists to localStorage for resume. Platform `content` shapes mirror the `/api/generate` response fields (YouTube includes `title`, `description`, optionally `timestamps`, and `transcript`). Client-side parsing lives at `handleSseEvent()` in `src/stores/generation-store.ts`.
+
+## GET /api/runs/:id
+
+Returns the full persisted run (for hydration after refresh). `200` with the run + `platformResults` array, `404` when not found. See [persistence.md](persistence.md) for the shape.
+
+## GET /api/runs/latest
+
+Returns the most recent run of any status (so a reload rehydrates finished work too); `404` when none exists.
+
+## POST /api/runs/:id/resume
+
+SSE endpoint. Restores the chat history from the persisted run (turn 1 is **not** re-run) and regenerates only the platforms whose status is not `ready`. Emits the same [event contract](#sse-events) as `/api/generate-all`.
+
+**Responses** `200 text/event-stream`, or JSON `404` (unknown run), `409` (no restorable chat history, or run already complete).
 
 ## POST /api/login
 

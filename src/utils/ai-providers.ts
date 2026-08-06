@@ -1,10 +1,8 @@
-import type { AIError } from "../types/index.js";
 import { AI_MODELS } from "../config/constants.js";
 
 export interface AIProvider {
   readonly name: string;
   readonly models: readonly string[];
-  generateContent?(prompt: string): Promise<{ text: string; model: string }>;
   startChatSession?(): void;
   sendChatMessage?(
     message: string,
@@ -13,6 +11,10 @@ export interface AIProvider {
       json_schema: { schema: object; name: string; strict: true };
     }
   ): Promise<{ text: string; model: string }>;
+  /** Snapshot the chat message history for persistence. */
+  serializeChatHistory?(): Array<{ role: string; content: string }>;
+  /** Replace the chat message history (used when resuming a persisted run). */
+  restoreChatHistory?(messages: Array<{ role: string; content: string }>): void;
 }
 
 export function isRetryableError(error: unknown): boolean {
@@ -52,133 +54,12 @@ async function withRetry<T>(
   throw new Error("Unreachable");
 }
 
-function collectError(error: unknown, providerName: string): AIError {
-  return {
-    provider: providerName,
-    message: error instanceof Error ? error.message : "Unbekannter Fehler",
-    status: (error as { status?: number }).status,
-  };
-}
-
-export class MistralProvider implements AIProvider {
-  readonly name = "Mistral";
-  readonly models = AI_MODELS.mistral;
-  private apiKey: string;
-  private baseUrl = "https://api.mistral.ai/v1";
-  private chatSession: { messages: Array<{ role: string; content: string }> } | null = null;
-  private _currentModel: string = "";
-
-  /** Backoff base delay for retries. Overridable for tests; production default 2000ms. */
-  retryBaseDelayMs = 2000;
-
-  get currentModel(): string {
-    return this._currentModel;
-  }
-
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-  }
-
-  private async callApi(
-    messages: Array<{ role: string; content: string }>,
-    model: string,
-    responseFormat?: {
-      type: "json_schema";
-      json_schema: { schema: object; name: string; strict: true };
-    },
-    timeoutMs = 120000
-  ): Promise<string> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    const body: Record<string, unknown> = { model, messages };
-    if (responseFormat) {
-      body.response_format = responseFormat;
-    }
-
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`[${response.status}] ${errorText}`);
-    }
-
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || "";
-  }
-
-  async generateContent(prompt: string): Promise<{ text: string; model: string }> {
-    const errors: AIError[] = [];
-
-    for (const model of this.models) {
-      try {
-        const text = await this.callApi([{ role: "user", content: prompt }], model);
-        return { text, model };
-      } catch (error: unknown) {
-        const aiError = collectError(error, this.name);
-        errors.push(aiError);
-        console.error(`Mistral error with ${model}:`, aiError.message);
-      }
-    }
-
-    throw new Error(`${this.name} failed: ${errors.map((e) => e.message).join(", ")}`);
-  }
-
-  startChatSession(): void {
-    this._currentModel = this.models[0];
-    this.chatSession = { messages: [] };
-  }
-
-  startChatSessionWithModel(modelName: string): void {
-    if (!this.models.includes(modelName)) {
-      throw new Error(`Model ${modelName} not available. Use: ${this.models.join(", ")}`);
-    }
-    this._currentModel = modelName;
-    this.chatSession = { messages: [] };
-  }
-
-  async sendChatMessage(
-    message: string,
-    responseFormat?: {
-      type: "json_schema";
-      json_schema: { schema: object; name: string; strict: true };
-    }
-  ): Promise<{ text: string; model: string }> {
-    if (!this.chatSession) {
-      throw new Error("Chat session not started. Call startChatSession() first.");
-    }
-
-    return withRetry(
-      async () => {
-        const messagesForRequest = [
-          ...this.chatSession!.messages,
-          { role: "user", content: message },
-        ];
-
-        const text = await this.callApi(messagesForRequest, this._currentModel, responseFormat);
-
-        this.chatSession!.messages.push({ role: "user", content: message });
-        this.chatSession!.messages.push({ role: "assistant", content: text });
-
-        return { text, model: this._currentModel };
-      },
-      this.name,
-      3,
-      this.retryBaseDelayMs
-    );
-  }
-}
-
+/**
+ * The text-generation provider. Ollama (OpenAI-compatible) is the sole text
+ * provider — chat turns for transcript correction, keywords, and per-platform
+ * posts all run here. Audio transcription is a separate concern (Mistral
+ * Voxtral, see transcriber.ts) and does not use this provider.
+ */
 export class OllamaProvider implements AIProvider {
   readonly name = "Ollama";
   readonly models: readonly string[];
@@ -187,7 +68,12 @@ export class OllamaProvider implements AIProvider {
   private chatSession: { messages: Array<{ role: string; content: string }> } | null = null;
   private _currentModel: string = "";
 
+  /** Backoff base delay for retries. Overridable for tests; production default 2000ms. */
   retryBaseDelayMs = 2000;
+
+  /** Per-request timeout in ms. Defaults to OLLAMA_TIMEOUT_MS env or 180000 (3 min);
+   * overridable per-call for tests. Large models can be slow, so this is generous. */
+  private requestTimeoutMs: number;
 
   get currentModel(): string {
     return this._currentModel;
@@ -197,6 +83,8 @@ export class OllamaProvider implements AIProvider {
     this.apiKey = apiKey;
     const modelName = model || AI_MODELS.ollama;
     this.models = [modelName];
+    const fromEnv = Number(import.meta.env.OLLAMA_TIMEOUT_MS);
+    this.requestTimeoutMs = Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : 180000;
   }
 
   private async callApi(
@@ -206,7 +94,7 @@ export class OllamaProvider implements AIProvider {
       type: "json_schema";
       json_schema: { schema: object; name: string; strict: true };
     },
-    timeoutMs = 120000
+    timeoutMs = this.requestTimeoutMs
   ): Promise<string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -240,6 +128,15 @@ export class OllamaProvider implements AIProvider {
   startChatSession(): void {
     this._currentModel = this.models[0];
     this.chatSession = { messages: [] };
+  }
+
+  serializeChatHistory(): Array<{ role: string; content: string }> {
+    return this.chatSession ? [...this.chatSession.messages] : [];
+  }
+
+  restoreChatHistory(messages: Array<{ role: string; content: string }>): void {
+    this._currentModel = this._currentModel || this.models[0];
+    this.chatSession = { messages: [...messages] };
   }
 
   async sendChatMessage(
@@ -272,4 +169,16 @@ export class OllamaProvider implements AIProvider {
       this.retryBaseDelayMs
     );
   }
+}
+
+/**
+ * Builds the text-generation provider from environment configuration. Ollama
+ * is the sole text provider; throws if OLLAMA_API_KEY is not set.
+ */
+export function createTextProvider(): OllamaProvider {
+  const apiKey = import.meta.env.OLLAMA_API_KEY;
+  if (!apiKey) {
+    throw new Error("OLLAMA_API_KEY is not set — text generation unavailable.");
+  }
+  return new OllamaProvider(apiKey);
 }

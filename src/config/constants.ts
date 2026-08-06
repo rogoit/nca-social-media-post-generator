@@ -19,23 +19,14 @@ export const CHARACTER_LIMITS = {
   tiktok: { min: 150, max: 300 },
 } as const;
 
-// AI Models — configured via environment variables with fallback defaults.
-// Text generation: Mistral chat. Video transcription: Mistral Voxtral
-// (hardcoded model in TRANSCRIPTION_CONSTANTS below; separate endpoint).
-const getMistralModels = (): readonly string[] => {
-  const models = import.meta.env.MISTRAL_MODELS;
-  if (models) {
-    return models.split(",").map((m: string) => m.trim());
-  }
-  return ["mistral-large-latest"];
-};
-
+// AI Models — text generation runs on Ollama (OpenAI-compatible). Configured
+// via OLLAMA_MODEL (env-overridable, default gpt-oss:20b). Video audio transcription
+// uses Mistral Voxtral separately (see TRANSCRIPTION_CONSTANTS below).
 const getOllamaModel = (): string => {
   return import.meta.env.OLLAMA_MODEL || "gpt-oss:20b";
 };
 
 export const AI_MODELS = {
-  mistral: getMistralModels(),
   ollama: getOllamaModel(),
 } as const;
 
@@ -104,11 +95,11 @@ export const ERROR_MESSAGES = {
 } as const;
 
 export const VIDEO_CONSTANTS = {
-  MAX_SIZE_BYTES: 100 * 1024 * 1024,
   ALLOWED_TYPES: ["video/mp4", "video/quicktime", "video/webm"] as const,
 } as const;
 
-// Mistral audio transcription (Voxtral) — replaces the old Gemini video path.
+// Mistral audio transcription (Voxtral) — the only remaining Mistral dependency;
+// all text generation runs on Ollama (see AI_MODELS above).
 export const TRANSCRIPTION_CONSTANTS = {
   MODEL: "voxtral-mini-latest",
   ENDPOINT: "https://api.mistral.ai/v1/audio/transcriptions",

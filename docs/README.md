@@ -1,6 +1,6 @@
 # Documentation
 
-Social Media Content Generator — single-user tool that turns a YouTube transcript (caption text) or an uploaded video into platform-ready posts for **YouTube, LinkedIn, Instagram, and TikTok** using Mistral (Voxtral for video transcription, chat-based text generation with content-quality gates) and ffmpeg for local audio extraction.
+Social Media Content Generator — single-user tool that turns a YouTube transcript (caption text) or an uploaded video into platform-ready posts for **YouTube, LinkedIn, Instagram, and TikTok** using Ollama (OpenAI-compatible text generation with strict JSON schemas + content-quality gates) and Mistral Voxtral for video transcription, with ffmpeg for local audio extraction.
 
 ## Guides
 
@@ -8,6 +8,7 @@ Social Media Content Generator — single-user tool that turns a YouTube transcr
 | ------------------------------------ | ----------------------------------------------------------------------------------- |
 | [architecture.md](architecture.md)   | System overview, request flows (caption vs. video), SSE event contract, module map  |
 | [pipeline.md](pipeline.md)           | Generation pipeline: chat session, Humanizer lint, model fallback, prompt structure |
+| [persistence.md](persistence.md)     | SQLite run storage, save-points, resume-on-refresh/SSE-drop flow                    |
 | [api-reference.md](api-reference.md) | All endpoints with request/response and SSE event payloads                          |
 | [testing.md](testing.md)             | 3-tier test strategy, how to run, TDD workflow, what goes where                     |
 | [development.md](development.md)     | Setup, environment variables, code conventions, pre-commit checklist                |

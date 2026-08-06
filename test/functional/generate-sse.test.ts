@@ -22,6 +22,33 @@ vi.mock("../../src/utils/transcriber.js", () => ({
   })),
 }));
 
+// Stub the persistence layer — the repository has its own unit tests.
+// The SSE contract tests must not touch a real database.
+vi.mock("../../src/utils/persistence.js", () => ({
+  startRun: vi.fn(async (input: { filename: string; inputSource: "caption" | "video" }) => ({
+    id: "test-run-id",
+    filename: input.filename,
+    inputSource: input.inputSource,
+    status: "running" as const,
+    rawTranscript: null,
+    correctedTranscript: null,
+    keywords: null,
+    chatHistory: null,
+    model: null,
+    videoDuration: null,
+    errorMessage: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  })),
+  persistTurn1: vi.fn(async () => {}),
+  persistPlatformResult: vi.fn(async () => {}),
+  finishRun: vi.fn(async () => {}),
+  loadRun: vi.fn(async () => null),
+  findResumableRun: vi.fn(async () => null),
+  missingPlatforms: vi.fn(async () => []),
+  newRunId: vi.fn(() => "test-run-id"),
+}));
+
 interface SseEvent {
   event: string;
   data: any;
@@ -103,10 +130,15 @@ describe("generate-all SSE endpoint", () => {
     const events = await readSseEvents(response);
     const names = events.map((e) => e.event);
 
-    expect(names[0]).toBe("transcript_done");
+    expect(names[0]).toBe("run_started");
+    expect(names).toContain("transcript_done");
     expect(names).toContain("platform_started");
     expect(names.filter((n) => n === "platform_done")).toHaveLength(4);
     expect(names[names.length - 1]).toBe("complete");
+
+    const runStarted = events.find((e) => e.event === "run_started");
+    expect(runStarted!.data.runId).toBe("test-run-id");
+    expect(runStarted!.data.filename).toBeDefined();
 
     const transcriptDone = events.find((e) => e.event === "transcript_done");
     expect(transcriptDone!.data.transcript).toBe("Korrigiertes Transkript.");
@@ -115,7 +147,7 @@ describe("generate-all SSE endpoint", () => {
     const ytDone = events.find((e) => e.event === "platform_done" && e.data.platform === "youtube");
     expect(ytDone!.data.content.title).toBe("YT Titel");
     expect(ytDone!.data.content.description).toContain("YT Beschreibung");
-    expect(ytDone!.data.modelUsed).toBe("mistral-large-latest");
+    expect(ytDone!.data.modelUsed).toBe("Ollama/gpt-oss:20b");
 
     const liDone = events.find(
       (e) => e.event === "platform_done" && e.data.platform === "linkedin"
@@ -273,24 +305,6 @@ describe("generate-from-video SSE endpoint", () => {
     const response = await POST({
       request: videoFormRequest({ type: "video/avi" }),
     });
-    expect(response.status).toBe(400);
-  });
-
-  it("should return 400 for videos exceeding 100 MB", async () => {
-    // Don't allocate 100MB in a test — validateVideoFile reads .size, so fake it.
-    const fakeFile = {
-      name: "huge.mp4",
-      size: 101 * 1024 * 1024,
-      type: "video/mp4",
-    };
-    const request = {
-      formData: () =>
-        Promise.resolve({
-          get: (name: string) => (name === "video" ? fakeFile : null),
-        }),
-    } as unknown as Request;
-
-    const response = await POST({ request });
     expect(response.status).toBe(400);
   });
 });
