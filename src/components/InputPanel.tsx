@@ -7,7 +7,6 @@ import {
   reset,
 } from "../stores/generation-store.js";
 
-const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const ALLOWED_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
 
 export default function InputPanel() {
@@ -49,10 +48,6 @@ export default function InputPanel() {
     if (!file) return;
     if (!ALLOWED_TYPES.includes(file.type)) {
       setLocalError("Ungültiges Format. Erlaubt sind: MP4, MOV, WebM.");
-      return;
-    }
-    if (file.size > MAX_VIDEO_BYTES) {
-      setLocalError("Die Datei ist zu groß. Maximal 100 MB erlaubt.");
       return;
     }
     setLocalError(null);
@@ -154,7 +149,7 @@ export default function InputPanel() {
               }`}
             >
               <p className="text-gray-500 mb-2">Video hierher ziehen oder klicken zum Auswählen</p>
-              <p className="text-xs text-gray-400">MP4, MOV, WebM — max 100 MB</p>
+              <p className="text-xs text-gray-400">MP4, MOV, WebM</p>
               <input
                 ref={fileInputRef}
                 type="file"

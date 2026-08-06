@@ -127,10 +127,10 @@ describe("Validation Utilities", () => {
       );
     });
 
-    it("should reject files over 100MB", () => {
-      expect(
-        validateVideoFile({ name: "big.mp4", size: 150_000_000, type: "video/mp4" })
-      ).toContain("100 MB");
+    it("should accept arbitrarily large video files (no size cap)", () => {
+      expect(validateVideoFile({ name: "huge.mp4", size: 5_000_000_000, type: "video/mp4" })).toBe(
+        null
+      );
     });
 
     it("should reject non-video mime types", () => {
