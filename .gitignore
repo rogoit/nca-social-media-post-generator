@@ -13,6 +13,12 @@
 /.astro
 /html
 
+# SQLite persistence (local + container-mounted)
+/data
+*.db
+*.db-shm
+*.db-wal
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

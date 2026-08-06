@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import {
   generationStore,
   retryPlatform,
+  loadPersistedRunOnMount,
   type PlatformKey,
   type PlatformState,
 } from "../stores/generation-store.js";
@@ -18,6 +19,13 @@ const PLATFORM_ORDER: PlatformKey[] = ["youtube", "linkedin", "instagram", "tikt
 
 export default function GenerationFeed() {
   const state = useStore(generationStore);
+
+  // On mount: rehydrate the most recent persisted run (refresh / SSE-drop
+  // recovery). Finished cards reappear immediately; missing platforms
+  // resume silently. Runs once.
+  useEffect(() => {
+    void loadPersistedRunOnMount();
+  }, []);
 
   if (state.stage === "idle" || state.stage === "keywords") return null;
 
