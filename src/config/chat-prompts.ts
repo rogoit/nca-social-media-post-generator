@@ -10,6 +10,8 @@ export class ChatPrompts {
   static createInitialMessage(transcript: string): string {
     return `Du bist ein Social-Media-Content-Optimierungsassistent für Entwickler-Content im Jahr ${new Date().getFullYear()}.
 
+${GLOBAL_PROMPT_HELPERS.LANGUAGE}
+
 ${GLOBAL_PROMPT_HELPERS.BRAND_NAMES}
 
 ${GLOBAL_PROMPT_HELPERS.FACT_GROUNDING}
@@ -37,7 +39,6 @@ Korrektur-Hinweise:
 - "Open Code", "open code", "opencode", "cs code" ersetze mit "OpenCode"
 - "Claude 3" ersetze mit "Kimi 3"
 - "Key Me", "kimi", "kimy", "Kymy", "Kimmy", "Key Me 3", "kimi 3", "kimy 3", "Kimmy 3" ersetze mit "Kimi 3"
-- Wenn Transkript auf Englisch ist, bleibe auf Englisch
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
   }
@@ -70,8 +71,10 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
 - "description": Sehr lange Beschreibung (ca. 1500 Zeichen, GENAU 3 ausführliche Absätze à 8-10 Sätze).${timestampsField}
 
 Regeln:
-Titel: VERBOTEN sind "Meine Meinung zu...", negative Clickbait, (), &, #, !. Statt "&" immer "und"/"+" schreiben. Nie "Im Short zeige ich"/"Im Video". Ich-Perspektive. Englisch wenn Transkript englisch.
+Titel: VERBOTEN sind "Meine Meinung zu...", negative Clickbait, (), &, #, !. Statt "&" immer "und"/"+" schreiben. Nie "Im Short zeige ich"/"Im Video". Ich-Perspektive. Auf Deutsch.
 Beschreibung: Für Entwickler. Absatz 1: These mit Hauptkeyword am Anfang. Absatz 2: Argumente aus dem Transkript. Absatz 3: Community-Diskussion. NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.${timestampsRule}
+
+${GLOBAL_PROMPT_HELPERS.HASHTAG_RULE_YOUTUBE}
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
   }
@@ -98,7 +101,7 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
 - 500-800 Zeichen
 - Persönlich, kurze Absätze
 - KEINE Emojis
-- GENAU 10 Hashtags: erste 3 MÜSSEN #nca #duisburg #ncatestify sein, 7 themenspezifisch
+- ${GLOBAL_PROMPT_HELPERS.HASHTAG_RULE_SOCIAL}
 - NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
@@ -110,7 +113,7 @@ Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
 - 150-300 Zeichen (ohne Hashtags)
 - Starker Hook in den ersten 10-15 Wörtern
 - KEINE Emojis
-- 3-6 Hashtags (deutsch + englisch Mix)
+- ${GLOBAL_PROMPT_HELPERS.HASHTAG_RULE_SOCIAL}
 - NUR Fakten aus dem Transkript. Erfinde KEINE Zeitangaben, Daten, Zahlen, Events oder Zitate, die nicht im Transkript stehen.
 
 Antworte NUR mit dem JSON-Objekt, kein sonstiger Text, kein Markdown.`;
