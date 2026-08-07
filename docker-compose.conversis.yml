@@ -30,8 +30,11 @@ services:
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-https://ollama.com/v1}
       - DATABASE_PATH=/app/data/nca.db
     volumes:
-      - ./data:/app/data
+      - nca-data:/app/data
 
 networks:
   proxy:
     external: true
+
+volumes:
+  nca-data:

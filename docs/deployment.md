@@ -2,7 +2,7 @@
 
 ## Runtime model
 
-Astro SSR behind the Node adapter (`standalone`), single Docker container, port 4321. A SQLite file (`/app/data/nca.db`, mounted from `./data` on the host) persists generation runs so a refresh or SSE drop can resume. The video bytes themselves are never persisted — only the filename and generated text artifacts.
+Astro SSR behind the Node adapter (`standalone`), single Docker container, port 4321. A SQLite file (`/app/data/nca.db`, on a Docker named volume `nca-data`) persists generation runs so a refresh or SSE drop can resume. The video bytes themselves are never persisted — only the filename and generated text artifacts.
 
 ## Docker
 
@@ -17,13 +17,13 @@ Build and run locally:
 ```bash
 docker build -f Dockerfile.conversis -t nca-smgen .
 docker run --rm -p 4321:4321 \
-  -v "$PWD/data:/app/data" \
+  -v nca-data:/app/data \
   -e EDITOR_ADMIN=... -e EDITOR_PASSWORD=... \
   -e MISTRAL_API_KEY=... \
   nca-smgen
 ```
 
-The `./data` volume holds the SQLite file (`nca.db`) that persists runs for resume. Without it, resume still works within a container's lifetime but is lost on redeploy.
+The `nca-data` named volume holds the SQLite file (`nca.db`) that persists runs across redeploys. Docker copies the image's node-owned `/app/data` into the volume on first use, so the container's `node` user can write to it with no host-side setup. (Avoid a host bind mount like `./data:/app/data` — a root-owned host dir makes `/app/data` unwritable and the DB fails with `SQLITE_CANTOPEN`.)
 
 ## GitLab CI
 
