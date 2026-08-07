@@ -65,7 +65,7 @@ What's been your biggest learning from leading digital initiatives?
 INSTAGRAM POST:
 🚀 Digital transformation isn't just tech - it's reimagining how we deliver value.
 
-#nca #duisburg #ncatestify #DigitalTransformation #Innovation
+#nevercodealone #vibecoding #coding #ai #ki #DigitalTransformation #Innovation
 `.trim(),
 };
 
