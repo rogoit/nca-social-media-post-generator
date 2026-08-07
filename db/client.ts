@@ -34,7 +34,10 @@ export async function getDb(): Promise<LibSQLDatabase<typeof schema>> {
   mkdirSync(dirname(absolute), { recursive: true });
 
   _client = createClient({ url: `file:${absolute}` });
-  await _client.execute("PRAGMA journal_mode = WAL;");
+  // WAL is intentionally NOT enabled: WAL needs mmap-able shared memory (the
+  // -shm file), which Docker's overlay2 storage driver rejects with
+  // SQLITE_IOERR. SQLite's default DELETE journal uses plain file I/O and
+  // works on every filesystem — at negligible cost for this single-user app.
   await _client.execute("PRAGMA foreign_keys = ON;");
   await migrate(_client);
 

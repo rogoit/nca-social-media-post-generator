@@ -18,7 +18,7 @@ A browser refresh or SSE/network drop during generation must not restart the pip
 
 ## Storage
 
-SQLite via `@libsql/client` (pure JS — no native build, works on the Alpine Docker image) + Drizzle ORM. Single file at `DATABASE_PATH` (default `./data/nca.db`, `/app/data/nca.db` in the container). The connection (`db/client.ts`) is a module-level singleton — this is infrastructure (a connection pool), not generation/chat state, so it is correct to share it. `GenerationSession` itself stays request-scoped.
+SQLite via `@libsql/client` (pure JS — no native build, works on the Alpine Docker image) + Drizzle ORM. Single file at `DATABASE_PATH` (default `./data/nca.db`, `/app/data/nca.db` in the container). The connection (`db/client.ts`) is a module-level singleton — this is infrastructure (a connection pool), not generation/chat state, so it is correct to share it. `GenerationSession` itself stays request-scoped. WAL is intentionally **off** — Docker's `overlay2` storage driver rejects WAL's mmap/`-shm` with `SQLITE_IOERR`, so SQLite uses its default DELETE journal (plain file I/O, works on any filesystem).
 
 Schema lives in `db/schema.ts`; DDL is applied idempotently on boot via `db/migrate.ts` (`CREATE TABLE IF NOT EXISTS`) — no drizzle-kit migration step required.
 
