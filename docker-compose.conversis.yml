@@ -3,6 +3,8 @@ services:
     container_name: ${SHORTCODE1:?SHORTCODE1 is required}-web
     image: ${IMAGE:?IMAGE is required}
     restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
     networks:
       - proxy
     labels:
